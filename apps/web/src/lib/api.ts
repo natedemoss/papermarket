@@ -60,6 +60,16 @@ interface Trade {
     market?: Market
 }
 
+interface Comment {
+    id: string
+    userId: string
+    marketId: string
+    content: string
+    createdAt: string
+    updatedAt: string
+    user: { id: string; username: string; avatarUrl: string | null }
+}
+
 interface LeaderboardEntry {
     rank: number
     user: User
@@ -227,6 +237,21 @@ class ApiClient {
         return response.data as Position[]
     }
 
+    // Comment endpoints
+    async getComments(marketId: string) {
+        const response = await this.axiosInstance.get(`/markets/${marketId}/comments`)
+        return response.data as Comment[]
+    }
+
+    async postComment(marketId: string, content: string) {
+        const response = await this.axiosInstance.post(`/markets/${marketId}/comments`, { content })
+        return response.data as Comment
+    }
+
+    async deleteComment(marketId: string, commentId: string) {
+        await this.axiosInstance.delete(`/markets/${marketId}/comments/${commentId}`)
+    }
+
     // Admin endpoints
     async syncPolymarket() {
         const response = await this.axiosInstance.post('/admin/sync')
@@ -241,6 +266,7 @@ export type {
     Market,
     Position,
     Trade,
+    Comment,
     LeaderboardEntry,
     AuthToken,
 }
