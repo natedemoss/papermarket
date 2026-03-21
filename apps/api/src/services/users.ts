@@ -103,6 +103,7 @@ export class UserService {
     async getLeaderboard() {
         // Fetch all users with their positions (and market probs) and trade counts
         const users = await this.prisma.user.findMany({
+            where: { isAdmin: false },
             select: {
                 id: true,
                 username: true,

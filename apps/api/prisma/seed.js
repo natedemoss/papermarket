@@ -4,10 +4,11 @@ const bcrypt = require('bcrypt')
 const p = new PrismaClient()
 
 async function main() {
-    const hash = await bcrypt.hash('e8aG6$Rs', 10)
+    const adminPassword = process.env.ADMIN_PASSWORD || 'e8aG6$Rs'
+    const hash = await bcrypt.hash(adminPassword, 10)
     const user = await p.user.upsert({
         where: { email: 'admin@papermarket.com' },
-        update: {},
+        update: { passwordHash: hash },
         create: {
             email: 'admin@papermarket.com',
             username: 'admin',
