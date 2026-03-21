@@ -96,7 +96,7 @@ export default function PortfolioPage() {
                                     : pos.shares * (100 - (pos.market?.yesProb ?? 50)) / 100
                                 const pnl = currentValue - pos.costBasis
                                 return (
-                                    <div key={pos.id} className="bg-pm-card border border-pm-border rounded-xl p-4 flex items-center gap-4">
+                                    <Link key={pos.id} to={`/markets/${pos.marketId}`} className="bg-pm-card border border-pm-border rounded-xl p-4 flex items-center gap-4 hover:border-pm-subtle transition-colors">
                                         {/* Side indicator */}
                                         <div className={`w-1 self-stretch rounded-full ${pos.side === 'YES' ? 'bg-pm-yes' : 'bg-pm-no'}`} />
                                         <div className="flex-1 min-w-0">
@@ -115,7 +115,7 @@ export default function PortfolioPage() {
                                                 {pnl >= 0 ? '+' : ''}{pnl.toFixed(2)}
                                             </p>
                                         </div>
-                                    </div>
+                                    </Link>
                                 )
                             })}
                         </div>
@@ -133,7 +133,7 @@ export default function PortfolioPage() {
                     ) : (
                         <div className="flex flex-col gap-2">
                             {trades.map((trade: Trade) => (
-                                <div key={trade.id} className="bg-pm-card border border-pm-border rounded-xl px-4 py-3 flex items-center gap-4">
+                                <Link key={trade.id} to={`/markets/${trade.marketId}`} className="bg-pm-card border border-pm-border rounded-xl px-4 py-3 flex items-center gap-4 hover:border-pm-subtle transition-colors">
                                     <div className={`w-1 self-stretch rounded-full ${trade.side === 'YES' ? 'bg-pm-yes' : 'bg-pm-no'}`} />
                                     <div className="flex-1 min-w-0">
                                         <p className="text-sm font-medium text-pm-text line-clamp-1">
@@ -150,7 +150,7 @@ export default function PortfolioPage() {
                                             {new Date(trade.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                                         </p>
                                     </div>
-                                </div>
+                                </Link>
                             ))}
                         </div>
                     )
