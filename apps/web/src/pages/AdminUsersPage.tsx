@@ -1,19 +1,47 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { apiClient, User } from '../lib/api'
+import { apiClient, User, Market } from '../lib/api'
 import { useAuth } from '../lib/store'
 
 type AdminUser = User & { totalTrades: number }
+type AdminTab = 'users' | 'markets'
 
 export default function AdminUsersPage() {
     const { user } = useAuth()
     const navigate = useNavigate()
+    const [adminTab, setAdminTab] = useState<AdminTab>('users')
     const [users, setUsers] = useState<AdminUser[]>([])
+    const [markets, setMarkets] = useState<Market[]>([])
     const [isLoading, setIsLoading] = useState(true)
+    const [marketsLoading, setMarketsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [search, setSearch] = useState('')
     const [syncing, setSyncing] = useState(false)
     const [syncResult, setSyncResult] = useState<string | null>(null)
+    const [resolving, setResolving] = useState<string | null>(null)
+
+    const loadMarkets = async () => {
+        setMarketsLoading(true)
+        try {
+            const data = await apiClient.getMarkets(undefined, 'closing_soon')
+            setMarkets(data)
+        } finally {
+            setMarketsLoading(false)
+        }
+    }
+
+    const handleResolve = async (marketId: string, outcome: boolean) => {
+        setResolving(marketId)
+        try {
+            await apiClient.resolveMarket(marketId, outcome)
+            setMarkets(prev => prev.filter(m => m.id !== marketId))
+            setSyncResult(`Market resolved as ${outcome ? 'YES' : 'NO'}`)
+        } catch {
+            setSyncResult('Failed to resolve market')
+        } finally {
+            setResolving(null)
+        }
+    }
 
     const handleSync = async () => {
         setSyncing(true)
@@ -35,6 +63,10 @@ export default function AdminUsersPage() {
             .catch(() => setError('Failed to load users'))
             .finally(() => setIsLoading(false))
     }, [user, navigate])
+
+    useEffect(() => {
+        if (adminTab === 'markets') loadMarkets()
+    }, [adminTab])
 
     const filtered = users.filter(u =>
         u.username.toLowerCase().includes(search.toLowerCase()) ||
@@ -93,6 +125,67 @@ export default function AdminUsersPage() {
                 </div>
 
 
+                {/* Tabs */}
+                <div className="flex gap-1 mb-5 border-b border-pm-border">
+                    {(['users', 'markets'] as AdminTab[]).map(tab => (
+                        <button key={tab} onClick={() => setAdminTab(tab)}
+                            className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors capitalize ${
+                                adminTab === tab ? 'border-pm-blue text-pm-text' : 'border-transparent text-pm-muted hover:text-pm-text'
+                            }`}>
+                            {tab === 'users' ? 'Users' : 'Resolve Markets'}
+                        </button>
+                    ))}
+                </div>
+
+                {/* Markets tab */}
+                {adminTab === 'markets' && (
+                    marketsLoading ? (
+                        <div className="text-center py-20"><div className="inline-block w-5 h-5 border-2 border-pm-border border-t-pm-blue rounded-full animate-spin" /></div>
+                    ) : (
+                        <div className="flex flex-col gap-2">
+                            {markets.filter(m => !m.resolvedAt).length === 0 && (
+                                <div className="text-center py-16 text-pm-muted text-sm">No unresolved markets</div>
+                            )}
+                            {markets.filter(m => !m.resolvedAt).map(m => {
+                                const isPast = m.closesAt && new Date(m.closesAt) < new Date()
+                                return (
+                                    <div key={m.id} className="bg-pm-card border border-pm-border rounded-xl p-4 flex items-center gap-4">
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-medium text-pm-text line-clamp-1">{m.title}</p>
+                                            <p className="text-xs text-pm-muted mt-0.5">
+                                                {m.closesAt && (
+                                                    <span className={isPast ? 'text-pm-no' : 'text-pm-subtle'}>
+                                                        {isPast ? 'Closed ' : 'Closes '}
+                                                        {new Date(m.closesAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                                    </span>
+                                                )}
+                                                {' · '}{m.yesProb}¢
+                                            </p>
+                                        </div>
+                                        <div className="flex gap-2 shrink-0">
+                                            <button
+                                                onClick={() => handleResolve(m.id, true)}
+                                                disabled={resolving === m.id}
+                                                className="px-3 py-1.5 bg-pm-yes-dim border border-pm-yes/30 hover:bg-green-900 text-pm-yes text-xs font-semibold rounded-lg transition-colors disabled:opacity-40"
+                                            >
+                                                YES
+                                            </button>
+                                            <button
+                                                onClick={() => handleResolve(m.id, false)}
+                                                disabled={resolving === m.id}
+                                                className="px-3 py-1.5 bg-pm-no-dim border border-pm-no/30 hover:bg-red-900 text-pm-no text-xs font-semibold rounded-lg transition-colors disabled:opacity-40"
+                                            >
+                                                NO
+                                            </button>
+                                        </div>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    )
+                )}
+
+                {adminTab === 'users' && <>
                 {/* Search */}
                 <div className="mb-4">
                     <input
@@ -179,6 +272,7 @@ export default function AdminUsersPage() {
                         )}
                     </div>
                 )}
+                </>}
             </div>
         </div>
     )
