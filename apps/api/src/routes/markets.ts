@@ -19,8 +19,8 @@ export function registerMarketRoutes(prisma: PrismaClient) {
     router.get(
         '/',
         asyncHandler(async (req: Request, res: Response) => {
-            const { category, sort, resolved } = req.query as any
-            const markets = await marketService.getAll({ category, sort, resolved: resolved === 'true' })
+            const { category, sort, resolved, overdue } = req.query as any
+            const markets = await marketService.getAll({ category, sort, resolved: resolved === 'true', overdue: overdue === 'true' })
             res.json(markets)
         })
     )

@@ -23,8 +23,17 @@ export default function AdminUsersPage() {
     const loadMarkets = async () => {
         setMarketsLoading(true)
         try {
-            const data = await apiClient.getMarkets(undefined, 'closing_soon')
-            setMarkets(data)
+            const [active, overdue] = await Promise.all([
+                apiClient.getMarkets(undefined, 'closing_soon'),
+                apiClient.getMarkets(undefined, undefined, false, true),
+            ])
+            const seen = new Set<string>()
+            const all = [...overdue, ...active].filter(m => {
+                if (seen.has(m.id)) return false
+                seen.add(m.id)
+                return true
+            })
+            setMarkets(all)
         } finally {
             setMarketsLoading(false)
         }

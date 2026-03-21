@@ -184,11 +184,12 @@ class ApiClient {
     }
 
     // Market endpoints
-    async getMarkets(category?: string, sort?: 'volume' | 'newest' | 'closing_soon', resolved?: boolean) {
+    async getMarkets(category?: string, sort?: 'volume' | 'newest' | 'closing_soon', resolved?: boolean, overdue?: boolean) {
         const params = new URLSearchParams()
         if (category) params.append('category', category)
         if (sort) params.append('sort', sort)
         if (resolved) params.append('resolved', 'true')
+        if (overdue) params.append('overdue', 'true')
 
         const response = await this.axiosInstance.get(`/markets?${params.toString()}`)
         return response.data as Market[]
