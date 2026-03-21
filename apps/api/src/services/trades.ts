@@ -23,6 +23,10 @@ export class TradeService {
             throw new BadRequestError('Cannot trade on resolved market')
         }
 
+        if (Number(market.yesProb) <= 1 || Number(market.yesProb) >= 99) {
+            throw new BadRequestError('Market odds are too extreme to trade')
+        }
+
         const user = await this.prisma.user.findUnique({
             where: { id: userId },
         })
