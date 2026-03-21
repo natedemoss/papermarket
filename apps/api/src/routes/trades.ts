@@ -16,8 +16,16 @@ export function registerTradeRoutes(prisma: PrismaClient) {
         authenticate as any,
         validateRequest(placeTradeSchema),
         asyncHandler(async (req: Request, res: Response) => {
-            const result = await tradeService.place(req.user!.id, req.body)
-            res.status(201).json(result)
+            try {
+                const result = await tradeService.place(req.user!.id, req.body)
+                res.status(201).json(result)
+            } catch (err: any) {
+                if (err.code === 'P2000' || err.message?.includes('numeric field overflow') || err.message?.includes('ConnectorError')) {
+                    res.status(400).json({ error: 'Trade amount is too large for this market. Please try a smaller amount.' })
+                } else {
+                    throw err
+                }
+            }
         })
     )
 

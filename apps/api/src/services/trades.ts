@@ -63,39 +63,36 @@ export class TradeService {
             // Calculate cost basis for position
             const costBasis = amount
 
-            // Upsert position
-            const position = await tx.position.upsert({
-                where: {
-                    userId_marketId_side: {
+            // Fetch existing position to calculate weighted average price
+            const existing = await tx.position.findUnique({
+                where: { userId_marketId_side: { userId, marketId, side } },
+            })
+
+            let position
+            if (existing) {
+                const totalShares = Number(existing.shares) + shares
+                const newAvgPrice = Math.min(99.99, ((Number(existing.shares) * Number(existing.avgPrice)) + (shares * pricePerShare * 100)) / totalShares)
+                position = await tx.position.update({
+                    where: { userId_marketId_side: { userId, marketId, side } },
+                    data: {
+                        shares: { increment: shares },
+                        avgPrice: newAvgPrice,
+                        costBasis: { increment: costBasis },
+                    },
+                })
+            } else {
+                position = await tx.position.create({
+                    data: {
+                        id: require('uuid').v4(),
                         userId,
                         marketId,
                         side,
+                        shares,
+                        avgPrice: pricePerShare * 100,
+                        costBasis,
                     },
-                },
-                update: {
-                    shares: {
-                        increment: shares,
-                    },
-                    avgPrice: {
-                        // Weighted average: (oldShares * oldPrice + newShares * newPrice) / (oldShares + newShares)
-                        // Since price = avgPrice, and cost = shares * price
-                        // New avgPrice = (costBasis + position.costBasis) / (shares + position.shares)
-                        increment: costBasis,
-                    },
-                    costBasis: {
-                        increment: costBasis,
-                    },
-                },
-                create: {
-                    id: require('uuid').v4(),
-                    userId,
-                    marketId,
-                    side,
-                    shares,
-                    avgPrice: pricePerShare,
-                    costBasis,
-                },
-            })
+                })
+            }
 
             // Create trade record
             const trade = await tx.trade.create({
