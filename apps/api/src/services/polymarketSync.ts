@@ -84,7 +84,7 @@ export class PolymarketSyncService {
         this.limit = limit
     }
 
-    async fetchTopMarkets(): Promise<PolymarketMarket[]> {
+    async fetchByOrder(order: string): Promise<PolymarketMarket[]> {
         const all: PolymarketMarket[] = []
         const pageSize = 100
         const maxPages = Math.ceil(this.limit / pageSize)
@@ -94,7 +94,7 @@ export class PolymarketSyncService {
                 const offset = page * pageSize
                 const fetchLimit = Math.min(pageSize, this.limit - offset)
                 const response = await fetch(
-                    `${this.apiBase}/markets?active=true&closed=false&limit=${fetchLimit}&offset=${offset}&order=volume24hr&ascending=false`
+                    `${this.apiBase}/markets?active=true&closed=false&limit=${fetchLimit}&offset=${offset}&order=${order}&ascending=false`
                 )
                 if (!response.ok) throw new Error(`Polymarket API returned ${response.status}`)
                 const data = await response.json() as any
@@ -104,9 +104,22 @@ export class PolymarketSyncService {
                 if (batch.length < pageSize) break
             }
         } catch (error) {
-            console.error('[sync] Error fetching Polymarket markets:', error)
+            console.error(`[sync] Error fetching Polymarket markets (${order}):`, error)
         }
 
+        return all
+    }
+
+    async fetchTopMarkets(): Promise<PolymarketMarket[]> {
+        const [byVolume, byNewest] = await Promise.all([
+            this.fetchByOrder('volume24hr'),
+            this.fetchByOrder('createdAt'),
+        ])
+        const seen = new Set<string>()
+        const all: PolymarketMarket[] = []
+        for (const m of [...byVolume, ...byNewest]) {
+            if (!seen.has(m.id)) { seen.add(m.id); all.push(m) }
+        }
         return all
     }
 
