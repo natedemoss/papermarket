@@ -14,7 +14,8 @@ model User {
   id            String   @id @default(uuid())
   username      String   @unique @db.VarChar(20)
   email         String   @unique
-  passwordHash  String
+  passwordHash  String?
+  googleId      String?  @unique
   paperBalance  Decimal  @default(1000.00) @db.Decimal(18, 2)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt

@@ -77,7 +77,7 @@ const startServer = async () => {
         // Register cron job for Polymarket sync
         if (env.POLYMARKET_SYNC_ENABLED === 'true') {
             const { PolymarketSyncService } = await import('./services/polymarketSync')
-            const syncService = new PolymarketSyncService(prisma)
+            const syncService = new PolymarketSyncService(prisma, parseInt(env.POLYMARKET_SYNC_LIMIT))
 
             cron.schedule('*/10 * * * *', async () => {
                 try {

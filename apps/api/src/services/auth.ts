@@ -46,6 +46,10 @@ export class AuthService {
             throw new UnauthorizedError('Invalid credentials')
         }
 
+        if (!user.passwordHash) {
+            throw new UnauthorizedError('This account uses Google sign-in. Please sign in with Google.')
+        }
+
         const isPasswordValid = await bcrypt.compare(password, user.passwordHash)
         if (!isPasswordValid) {
             throw new UnauthorizedError('Invalid credentials')
@@ -134,6 +138,10 @@ export class AuthService {
 
     private hashToken(token: string) {
         return require('crypto').createHash('sha256').update(token).digest('hex')
+    }
+
+    async storeRefreshTokenForUser(userId: string, token: string) {
+        return this.storeRefreshToken(userId, token)
     }
 
     private async storeRefreshToken(userId: string, token: string) {

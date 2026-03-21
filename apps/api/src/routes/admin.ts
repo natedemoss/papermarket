@@ -19,5 +19,34 @@ export function registerAdminRoutes(prisma: PrismaClient) {
         })
     )
 
+    // GET /api/admin/users (admin only)
+    router.get(
+        '/users',
+        authenticate as any,
+        requireAdmin as any,
+        asyncHandler(async (req: Request, res: Response) => {
+            const users = await prisma.user.findMany({
+                orderBy: { createdAt: 'desc' },
+                select: {
+                    id: true,
+                    username: true,
+                    email: true,
+                    paperBalance: true,
+                    isAdmin: true,
+                    createdAt: true,
+                    lastLoginAt: true,
+                    _count: {
+                        select: { trades: true },
+                    },
+                },
+            })
+            res.json(users.map(u => ({
+                ...u,
+                paperBalance: Number(u.paperBalance),
+                totalTrades: u._count.trades,
+            })))
+        })
+    )
+
     return router
 }

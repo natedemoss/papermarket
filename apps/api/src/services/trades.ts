@@ -110,37 +110,18 @@ export class TradeService {
                 },
             })
 
-            // Update market volume and probability
-            const marketUpdate: any = {
-                volume: {
-                    increment: amount,
-                },
-            }
+            // Shift probability based on trade size, capped between 3 and 97
+            const shift = Math.min(5, amount / 100)
+            const rawProb = side === 'YES'
+                ? market.yesProb + shift
+                : market.yesProb - shift
+            const newYesProb = Math.max(3, Math.min(97, Math.round(rawProb)))
 
-            // Slightly shift probability based on trade size
-            // YES trades push up, NO trades push down
-            const probabilityShift = Math.min(5, amount / 100) // Max 5% shift per trade
-            if (side === 'YES') {
-                marketUpdate.yesProb = {
-                    increment: probabilityShift,
-                }
-            } else {
-                marketUpdate.yesProb = {
-                    decrement: probabilityShift,
-                }
-            }
-
-            // Cap probability between 3 and 97
             await tx.market.update({
                 where: { id: marketId },
                 data: {
-                    ...marketUpdate,
-                    yesProb: {
-                        modifier: (val: number) => {
-                            const capped = Math.max(3, Math.min(97, val))
-                            return capped
-                        },
-                    },
+                    volume: { increment: amount },
+                    yesProb: newYesProb,
                 },
             })
 

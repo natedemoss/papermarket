@@ -28,5 +28,9 @@ Thumbs.db
 # Docker volumes (local)
 postgres_data/
 
+# Local dev scripts
+sync-now.js
+list-users.js
+
 # TypeScript cache
 *.tsbuildinfo

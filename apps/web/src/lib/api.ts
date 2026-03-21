@@ -257,6 +257,11 @@ class ApiClient {
         const response = await this.axiosInstance.post('/admin/sync')
         return response.data as { synced: number; errors: string[] }
     }
+
+    async getAdminUsers() {
+        const response = await this.axiosInstance.get('/admin/users')
+        return response.data as (User & { totalTrades: number })[]
+    }
 }
 
 export const apiClient = new ApiClient(import.meta.env.VITE_API_URL || '/api')

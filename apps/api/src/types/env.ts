@@ -13,6 +13,8 @@ export const envSchema = z.object({
     POLYMARKET_SYNC_LIMIT: z.string().default('50'),
     ADMIN_EMAIL: z.string().default('admin@papermarket.com'),
     ADMIN_PASSWORD: z.string().default('admin123'),
+    GOOGLE_CLIENT_ID: z.string().optional(),
+    GOOGLE_CLIENT_SECRET: z.string().optional(),
 })
 
 export type EnvConfig = z.infer<typeof envSchema>

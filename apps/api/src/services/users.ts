@@ -52,6 +52,7 @@ export class UserService {
                 username,
                 email,
                 passwordHash: hashedPassword,
+                googleId: null,
                 paperBalance: 1000.00,
             },
             select: {
@@ -100,49 +101,66 @@ export class UserService {
     }
 
     async getLeaderboard() {
-        // Get users with their P&L and trade count
-        const users: any[] = await this.prisma.$queryRaw`
-            SELECT
-                u.id,
-                u.username,
-                u.email,
-                u.paper_balance as "paperBalance",
-                u."createdAt",
-                u."avatarUrl",
-                u."isAdmin",
-                COUNT(t.id) as "totalTrades",
-                ROUND(
-                    (u.paper_balance + COALESCE(SUM(
-                        CASE
-                            WHEN p.side = 'YES' THEN p.shares * (1 - p."avgPrice")
-                            ELSE p.shares * p."avgPrice"
-                        END
-                    ) - u.paper_balance), 2)
-                ) as pnl
-            FROM users u
-            LEFT JOIN trades t ON t."userId" = u.id
-            LEFT JOIN positions p ON p."userId" = u.id
-            GROUP BY u.id
-            ORDER BY pnl DESC
-            LIMIT 50
-        `
-
-        return users.map((u: any, index: number) => ({
-            rank: index + 1,
-            user: {
-                id: u.id,
-                username: u.username,
-                email: u.email,
-                paperBalance: Number(u.paperBalance),
-                createdAt: u.createdAt,
-                updatedAt: u.createdAt,
-                lastLoginAt: null,
-                avatarUrl: u.avatarUrl,
-                isAdmin: u.isAdmin,
+        // Fetch all users with their positions (and market probs) and trade counts
+        const users = await this.prisma.user.findMany({
+            select: {
+                id: true,
+                username: true,
+                email: true,
+                paperBalance: true,
+                createdAt: true,
+                updatedAt: true,
+                lastLoginAt: true,
+                avatarUrl: true,
+                isAdmin: true,
+                positions: {
+                    where: { market: { resolvedAt: null } },
+                    select: {
+                        shares: true,
+                        side: true,
+                        costBasis: true,
+                        market: { select: { yesProb: true } },
+                    },
+                },
+                _count: { select: { trades: true } },
             },
-            pnl: Number(u.pnl),
-            totalTrades: Number(u.totalTrades),
-        }))
+        })
+
+        const ranked = users.map(u => {
+            const cash = Number(u.paperBalance)
+
+            // Unrealized value of open positions at current market price
+            const positionValue = u.positions.reduce((sum, p) => {
+                const price = p.side === 'YES'
+                    ? p.market.yesProb / 100
+                    : (100 - p.market.yesProb) / 100
+                return sum + Number(p.shares) * price
+            }, 0)
+
+            // P&L = (cash + open position value) - starting balance (1000)
+            const pnl = Math.round((cash + positionValue - 1000) * 100) / 100
+
+            return {
+                user: {
+                    id: u.id,
+                    username: u.username,
+                    email: u.email,
+                    paperBalance: cash,
+                    createdAt: u.createdAt,
+                    updatedAt: u.updatedAt,
+                    lastLoginAt: u.lastLoginAt,
+                    avatarUrl: u.avatarUrl,
+                    isAdmin: u.isAdmin,
+                },
+                pnl,
+                totalTrades: u._count.trades,
+            }
+        })
+
+        return ranked
+            .sort((a, b) => b.pnl - a.pnl)
+            .slice(0, 50)
+            .map((entry, index) => ({ ...entry, rank: index + 1 }))
     }
 
     async getPublicProfile(userId: string) {

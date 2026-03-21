@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { apiClient, Market } from '../lib/api'
 import { useMarkets } from '../lib/store'
+import CategoryIcon from '../components/CategoryIcon'
 
 const CATEGORY_TABS = [
     { label: 'All', value: '' },
@@ -28,14 +29,7 @@ function MarketRow({ market }: { market: Market }) {
             className="bg-pm-card border border-pm-border rounded-xl p-4 hover:border-pm-subtle transition-all duration-150 flex items-center gap-4 group"
         >
             {/* Icon */}
-            <div className="w-10 h-10 rounded-lg bg-pm-surface flex-shrink-0 flex items-center justify-center text-base">
-                {market.category === 'CRYPTO' ? '₿' :
-                 market.category === 'POLITICS' ? '🏛' :
-                 market.category === 'SPORTS' ? '⚽' :
-                 market.category === 'TECH' ? '💻' :
-                 market.category === 'SCIENCE' ? '🔬' :
-                 market.category === 'FINANCE' ? '📈' : '📊'}
-            </div>
+            <CategoryIcon category={market.category} />
 
             {/* Title + meta */}
             <div className="flex-1 min-w-0">
@@ -64,20 +58,14 @@ function MarketRow({ market }: { market: Market }) {
 
             {/* YES / NO */}
             <div className="flex gap-2 shrink-0">
-                <button
-                    onClick={e => { e.preventDefault(); }}
-                    className="flex flex-col items-center bg-pm-yes-dim hover:bg-green-900 border border-pm-yes/20 rounded-lg px-3 py-1.5 transition-colors min-w-[56px]"
-                >
+                <div className="flex flex-col items-center bg-pm-yes-dim hover:bg-green-900 border border-pm-yes/20 rounded-lg px-3 py-1.5 transition-colors min-w-[56px]">
                     <span className="text-pm-yes text-2xs font-semibold">YES</span>
                     <span className="font-tabular text-pm-yes font-bold text-sm">{yesProb}¢</span>
-                </button>
-                <button
-                    onClick={e => { e.preventDefault(); }}
-                    className="flex flex-col items-center bg-pm-no-dim hover:bg-red-900 border border-pm-no/20 rounded-lg px-3 py-1.5 transition-colors min-w-[56px]"
-                >
+                </div>
+                <div className="flex flex-col items-center bg-pm-no-dim hover:bg-red-900 border border-pm-no/20 rounded-lg px-3 py-1.5 transition-colors min-w-[56px]">
                     <span className="text-pm-no text-2xs font-semibold">NO</span>
                     <span className="font-tabular text-pm-no font-bold text-sm">{noProb}¢</span>
-                </button>
+                </div>
             </div>
         </Link>
     )
@@ -87,6 +75,8 @@ export default function MarketsPage() {
     const { markets, setMarkets, isLoading, setLoading, error, setError } = useMarkets()
     const [category, setCategory] = useState('')
     const [sort, setSort] = useState<'volume' | 'newest' | 'closing_soon'>('volume')
+    const [searchParams, setSearchParams] = useSearchParams()
+    const searchQuery = searchParams.get('q') ?? ''
 
     useEffect(() => {
         const fetch = async () => {
@@ -148,23 +138,45 @@ export default function MarketsPage() {
                     </div>
                 )}
 
+                {/* Search result label */}
+                {searchQuery && (
+                    <div className="flex items-center justify-between mb-3">
+                        <p className="text-sm text-pm-muted">
+                            Results for <span className="text-pm-text font-medium">"{searchQuery}"</span>
+                        </p>
+                        <button
+                            onClick={() => setSearchParams({})}
+                            className="text-xs text-pm-subtle hover:text-pm-muted transition-colors"
+                        >
+                            Clear
+                        </button>
+                    </div>
+                )}
+
                 {/* Markets list */}
                 {isLoading ? (
                     <div className="text-center py-20">
                         <div className="inline-block w-6 h-6 border-2 border-pm-border border-t-pm-blue rounded-full animate-spin" />
                         <p className="text-pm-muted text-sm mt-3">Loading markets...</p>
                     </div>
-                ) : markets.length === 0 ? (
-                    <div className="text-center py-20 text-pm-muted text-sm">
-                        No markets available
-                    </div>
-                ) : (
-                    <div className="flex flex-col gap-2">
-                        {markets.map((market: Market) => (
-                            <MarketRow key={market.id} market={market} />
-                        ))}
-                    </div>
-                )}
+                ) : (() => {
+                    const filtered = markets.filter((m: Market) => {
+                        const matchesCategory = !category || m.category === category
+                        const matchesSearch = !searchQuery || m.title.toLowerCase().includes(searchQuery.toLowerCase())
+                        return matchesCategory && matchesSearch
+                    })
+                    return filtered.length === 0 ? (
+                        <div className="text-center py-20 text-pm-muted text-sm">
+                            {searchQuery ? `No markets matching "${searchQuery}"` : 'No markets available'}
+                        </div>
+                    ) : (
+                        <div className="flex flex-col gap-2">
+                            {filtered.map((market: Market) => (
+                                <MarketRow key={market.id} market={market} />
+                            ))}
+                        </div>
+                    )
+                })()}
             </div>
         </div>
     )

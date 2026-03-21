@@ -27,13 +27,15 @@ services:
       NODE_ENV: development
       PORT: 8080
       DATABASE_URL: postgresql://${DB_USER:-papermarket}:${DB_PASSWORD:-papermarket}@postgres:5432/${DB_NAME:-papermarket_dev}
-      JWT_SECRET: ${JWT_SECRET:-dev-secret-key-change-in-production}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-dev-refresh-key-change-in-production}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
       FRONTEND_URL: http://localhost:3000
       POLYMARKET_SYNC_ENABLED: "true"
-      POLYMARKET_SYNC_LIMIT: "50"
-      ADMIN_EMAIL: admin@papermarket.com
-      ADMIN_PASSWORD: admin123
+      POLYMARKET_SYNC_LIMIT: "500"
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
     ports:
       - "8080:8080"
     depends_on:

@@ -10,6 +10,9 @@ import MarketsPage from './pages/MarketsPage'
 import MarketDetailPage from './pages/MarketDetailPage'
 import PortfolioPage from './pages/PortfolioPage'
 import LeaderboardPage from './pages/LeaderboardPage'
+import AdminUsersPage from './pages/AdminUsersPage'
+import OAuthCallbackPage from './pages/OAuthCallbackPage'
+import InfoPage from './pages/InfoPage'
 import Header from './components/Header'
 import ProtectedRoute from './components/ProtectedRoute'
 import ErrorBoundary from './components/ErrorBoundary'
@@ -40,6 +43,7 @@ export default function App() {
                         <Route path="/" element={<HomePage />} />
                         <Route path="/login" element={<LoginPage />} />
                         <Route path="/register" element={<RegisterPage />} />
+                        <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
                         <Route path="/markets" element={<MarketsPage />} />
                         <Route path="/markets/:id" element={<MarketDetailPage />} />
                         <Route
@@ -51,6 +55,15 @@ export default function App() {
                             }
                         />
                         <Route path="/leaderboard" element={<LeaderboardPage />} />
+                        <Route
+                            path="/admin/users"
+                            element={
+                                <ProtectedRoute>
+                                    <AdminUsersPage />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route path="/info" element={<InfoPage />} />
                         <Route path="*" element={<Navigate to="/" replace />} />
                     </Routes>
                 </main>

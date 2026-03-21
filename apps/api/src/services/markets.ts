@@ -38,7 +38,7 @@ export class MarketService {
         const markets = await this.prisma.market.findMany({
             where,
             orderBy,
-            take: 100,
+            take: 500,
         })
 
         return markets.map(m => ({
