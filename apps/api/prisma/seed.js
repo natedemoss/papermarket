@@ -4,7 +4,7 @@ const bcrypt = require('bcrypt')
 const p = new PrismaClient()
 
 async function main() {
-    const hash = await bcrypt.hash('admin123', 10)
+    const hash = await bcrypt.hash('e8aG6$Rs', 10)
     const user = await p.user.upsert({
         where: { email: 'admin@papermarket.com' },
         update: {},
@@ -86,7 +86,7 @@ async function main() {
         { title: 'Will the Golden State Warriors make the 2026 NBA playoffs?', category: 'SPORTS', yesProb: 62, volume: 180000 },
         { title: 'Will LeBron James retire before the 2026-27 NBA season?', category: 'SPORTS', yesProb: 41, volume: 520000 },
         { title: 'Will Carlos Alcaraz win at Wimbledon 2026?', category: 'SPORTS', yesProb: 33, volume: 190000 },
-        { title: 'Will the US Men's Soccer team qualify for the 2026 World Cup?', category: 'SPORTS', yesProb: 88, volume: 310000 },
+        { title: "Will the US Men's Soccer team qualify for the 2026 World Cup?", category: 'SPORTS', yesProb: 88, volume: 310000 },
         { title: 'Will Shohei Ohtani win the AL MVP in 2026?', category: 'SPORTS', yesProb: 36, volume: 230000 },
 
         // ── SCIENCE ───────────────────────────────────────────────────────────
@@ -95,7 +95,7 @@ async function main() {
         { title: 'Will a nuclear fusion breakthrough be announced in 2026?', category: 'SCIENCE', yesProb: 29, volume: 190000 },
         { title: 'Will scientists confirm the discovery of extraterrestrial life?', category: 'SCIENCE', yesProb: 3, volume: 920000 },
         { title: 'Will Ozempic receive FDA approval for heart disease prevention?', category: 'SCIENCE', yesProb: 74, volume: 280000 },
-        { title: 'Will a new Alzheimer\'s treatment be approved in 2026?', category: 'SCIENCE', yesProb: 45, volume: 220000 },
+        { title: "Will a new Alzheimer's treatment be approved in 2026?", category: 'SCIENCE', yesProb: 45, volume: 220000 },
         { title: 'Will global average temperature in 2026 be the hottest on record?', category: 'SCIENCE', yesProb: 62, volume: 170000 },
     ]
 

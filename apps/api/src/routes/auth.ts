@@ -58,7 +58,8 @@ export function registerAuthRoutes(prisma: PrismaClient) {
         authenticate as any,
         asyncHandler(async (req: Request, res: Response) => {
             const user = await new UserService(prisma).findById(req.user!.id)
-            res.json(user)
+            if (!user) { res.status(404).json({ error: 'User not found' }); return }
+            res.json({ ...user, paperBalance: Number(user.paperBalance) })
         })
     )
 
