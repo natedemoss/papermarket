@@ -18,6 +18,7 @@ export class MarketService {
             ? { resolvedAt: { not: null } }
             : {
                 resolvedAt: null,
+                yesProb: { gte: 2, lte: 98 },
                 OR: [
                     { closesAt: null },
                     { closesAt: { gt: now, lt: oneYearOut } },
