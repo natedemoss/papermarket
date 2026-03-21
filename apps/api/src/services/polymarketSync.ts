@@ -34,7 +34,7 @@ function parseYesProb(market: PolymarketMarket): number | null {
             : market.outcomePrices
         if (Array.isArray(prices) && prices.length > 0) {
             const prob = Math.round(parseFloat(prices[0]) * 100)
-            if (prob >= 1 && prob <= 99) return prob
+            if (prob >= 0 && prob <= 100) return Math.max(1, Math.min(99, prob))
         }
     } catch {}
     return null
@@ -131,7 +131,6 @@ export class PolymarketSyncService {
 
                 const closeDate = new Date(m.endDate)
                 if (closeDate < new Date()) continue  // skip already-closed markets
-                if (closeDate > twoYearsOut) continue
 
                 const volume = m.volumeNum ?? (parseFloat(m.volume || '0') || 0)
                 const category = parseCategory(m)
