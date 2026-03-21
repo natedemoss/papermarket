@@ -12,6 +12,7 @@ import PortfolioPage from './pages/PortfolioPage'
 import LeaderboardPage from './pages/LeaderboardPage'
 import Header from './components/Header'
 import ProtectedRoute from './components/ProtectedRoute'
+import ErrorBoundary from './components/ErrorBoundary'
 
 export default function App() {
     const { accessToken, setUser, setLoading } = useAuth()
@@ -31,6 +32,7 @@ export default function App() {
 
     return (
         <BrowserRouter>
+          <ErrorBoundary>
             <div className="min-h-screen bg-pm-bg text-pm-text">
                 <Header />
                 <main>
@@ -53,6 +55,7 @@ export default function App() {
                     </Routes>
                 </main>
             </div>
+          </ErrorBoundary>
         </BrowserRouter>
     )
 }

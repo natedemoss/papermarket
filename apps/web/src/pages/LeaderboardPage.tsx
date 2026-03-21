@@ -90,7 +90,7 @@ export default function LeaderboardPage() {
                                 {/* Balance */}
                                 <div className="col-span-2 text-right">
                                     <span className="font-tabular text-sm font-semibold text-pm-text">
-                                        ${entry.user.paperBalance.toFixed(2)}
+                                        ${Number(entry.user.paperBalance).toFixed(2)}
                                     </span>
                                 </div>
                             </div>

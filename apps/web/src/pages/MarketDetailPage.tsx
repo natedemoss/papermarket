@@ -358,7 +358,7 @@ function TradePanel({ market, onTradeSuccess }: {
         if (!user || !market) return
         const tradeAmount = parseFloat(amount)
         if (isNaN(tradeAmount) || tradeAmount <= 0) { setError('Invalid amount'); return }
-        if (tradeAmount > user.paperBalance) { setError('Insufficient balance'); return }
+        if (tradeAmount > Number(user.paperBalance)) { setError('Insufficient balance'); return }
         setTrading(true); setError(null)
         try {
             const result = await apiClient.placeTrade(market.id, side, tradeAmount)
@@ -441,7 +441,7 @@ function TradePanel({ market, onTradeSuccess }: {
                             <div className="flex justify-between"><span className="text-pm-muted">Max payout</span><span className="font-tabular text-pm-yes">${isNaN(shares) ? '—' : shares.toFixed(2)}</span></div>
                             <div className="flex justify-between border-t border-pm-border pt-2">
                                 <span className="text-pm-muted">Balance after</span>
-                                <span className="font-tabular text-pm-text">${Math.max(0, user.paperBalance - (parseFloat(amount) || 0)).toFixed(2)}</span>
+                                <span className="font-tabular text-pm-text">${Math.max(0, Number(user.paperBalance) - (parseFloat(amount) || 0)).toFixed(2)}</span>
                             </div>
                         </div>
 
@@ -460,7 +460,7 @@ function TradePanel({ market, onTradeSuccess }: {
                             {trading ? 'Placing order...' : `Buy ${side}`}
                         </button>
                         <p className="font-tabular text-pm-subtle text-2xs text-center">
-                            Balance: ${user.paperBalance.toFixed(2)}
+                            Balance: ${Number(user.paperBalance).toFixed(2)}
                         </p>
                     </>
                 )}

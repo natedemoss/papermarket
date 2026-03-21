@@ -285,7 +285,7 @@ export default function HomePage() {
                                 {[
                                     { label: 'Active Markets', value: markets.length.toString() },
                                     { label: 'Total Volume', value: '$' + (markets.reduce((s, m) => s + m.volume, 0) / 1000).toFixed(0) + 'K' },
-                                    { label: 'Play Balance', value: user ? `$${user.paperBalance.toFixed(0)}` : '$1,000 free' },
+                                    { label: 'Play Balance', value: user ? `$${Number(user.paperBalance).toFixed(0)}` : '$1,000 free' },
                                 ].map(({ label, value }) => (
                                     <div key={label} className="flex items-center justify-between">
                                         <span className="text-xs text-pm-muted">{label}</span>

@@ -95,7 +95,7 @@ export default function Header() {
                             <>
                                 <div className="hidden sm:flex items-center gap-2 bg-pm-card border border-pm-border rounded-md px-3 py-1.5">
                                     <span className="font-tabular text-sm font-medium text-pm-yes">
-                                        ${user.paperBalance.toFixed(2)}
+                                        ${Number(user.paperBalance).toFixed(2)}
                                     </span>
                                     <span className="text-pm-subtle text-xs">|</span>
                                     <span className="text-pm-muted text-xs">{user.username}</span>
