@@ -25,7 +25,9 @@ export default function PortfolioPage() {
         fetchData()
     }, [setPosState, setTradesState])
 
-    const totalPositionValue = positions.reduce((sum, pos) => {
+    const openPositions = positions.filter((pos: Position) => !pos.market?.resolvedAt)
+
+    const totalPositionValue = openPositions.reduce((sum, pos) => {
         if (pos.market) {
             const value = pos.side === 'YES'
                 ? pos.shares * (pos.market.yesProb / 100)
@@ -50,7 +52,7 @@ export default function PortfolioPage() {
                 <div className="grid grid-cols-3 gap-3 mb-6">
                     {[
                         { label: 'Position Value', value: `$${totalPositionValue.toFixed(2)}` },
-                        { label: 'Open Positions', value: positions.length.toString() },
+                        { label: 'Open Positions', value: openPositions.length.toString() },
                         { label: 'Total Trades', value: trades.length.toString() },
                     ].map(({ label, value }) => (
                         <div key={label} className="bg-pm-card border border-pm-border rounded-xl p-4">
@@ -83,14 +85,14 @@ export default function PortfolioPage() {
                         <div className="text-center py-16">
                             <div className="inline-block w-5 h-5 border-2 border-pm-border border-t-pm-blue rounded-full animate-spin" />
                         </div>
-                    ) : positions.length === 0 ? (
+                    ) : openPositions.length === 0 ? (
                         <div className="text-center py-16 text-pm-muted text-sm">
                             <p className="mb-3">No open positions</p>
                             <Link to="/markets" className="text-pm-blue hover:underline text-xs">Browse markets</Link>
                         </div>
                     ) : (
                         <div className="flex flex-col gap-2">
-                            {positions.map((pos: Position) => {
+                            {openPositions.map((pos: Position) => {
                                 const currentValue = pos.side === 'YES'
                                     ? pos.shares * (pos.market?.yesProb ?? 50) / 100
                                     : pos.shares * (100 - (pos.market?.yesProb ?? 50)) / 100
