@@ -144,6 +144,9 @@ export class PolymarketSyncService {
 
                 const closeDate = new Date(m.endDate)
                 if (closeDate < new Date()) continue  // skip already-closed markets
+                const oneYearOut = new Date()
+                oneYearOut.setFullYear(oneYearOut.getFullYear() + 1)
+                if (closeDate > oneYearOut) continue  // skip markets closing more than 1 year out
 
                 const volume = m.volumeNum ?? (parseFloat(m.volume || '0') || 0)
                 const category = parseCategory(m)
