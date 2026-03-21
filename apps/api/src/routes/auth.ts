@@ -15,6 +15,7 @@ export function registerAuthRoutes(prisma: PrismaClient) {
 
     const googleEnabled = !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET)
     const GOOGLE_CALLBACK_URL = (process.env.GOOGLE_CALLBACK_URL ?? 'http://localhost:8080/api/auth/google/callback').trim()
+    const FRONTEND = (process.env.FRONTEND_URL ?? 'http://localhost:3000').trim().replace(/\/$/, '')
 
     // POST /api/auth/register
     router.post(
@@ -82,7 +83,7 @@ export function registerAuthRoutes(prisma: PrismaClient) {
         const { code, error } = req.query as { code?: string; error?: string }
 
         if (error || !code) {
-            return res.redirect(`${process.env.FRONTEND_URL}/login?error=google_failed`)
+            return res.redirect(`${FRONTEND}/login?error=google_failed`)
         }
 
         const user = await handleGoogleCallback(code, GOOGLE_CALLBACK_URL, prisma)
@@ -101,7 +102,7 @@ export function registerAuthRoutes(prisma: PrismaClient) {
         await authService.storeRefreshTokenForUser(user.id, refreshToken)
 
         const params = new URLSearchParams({ accessToken, refreshToken })
-        res.redirect(`${process.env.FRONTEND_URL}/oauth/callback?${params.toString()}`)
+        res.redirect(`${FRONTEND}/oauth/callback?${params.toString()}`)
     }))
 
     // GET /api/auth/google/status
