@@ -7,15 +7,15 @@ import { mapPolymarketCategory } from '../types/polymarket'
 export class MarketService {
     constructor(private prisma: PrismaClient) {}
 
-    async getAll(params?: { category?: string; sort?: 'volume' | 'newest' | 'closing_soon'; resolved?: boolean; overdue?: boolean }) {
-        const { category, sort, resolved, overdue } = params || {}
+    async getAll(params?: { category?: string; sort?: 'volume' | 'newest' | 'closing_soon'; resolved?: boolean; overdue?: boolean; withPositions?: boolean }) {
+        const { category, sort, resolved, overdue, withPositions } = params || {}
         const now = new Date()
 
         const oneYearOut = new Date()
         oneYearOut.setFullYear(oneYearOut.getFullYear() + 1)
 
         const where: any = overdue
-            ? { resolvedAt: null, closesAt: { lt: now } }
+            ? { resolvedAt: null, closesAt: { lt: now }, positions: { some: {} } }
             : resolved
             ? { resolvedAt: { not: null } }
             : {
@@ -29,6 +29,9 @@ export class MarketService {
 
         if (category) {
             where.category = category
+        }
+        if (withPositions) {
+            where.positions = { some: {} }
         }
 
         const orderBy: any = []

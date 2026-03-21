@@ -184,12 +184,13 @@ class ApiClient {
     }
 
     // Market endpoints
-    async getMarkets(category?: string, sort?: 'volume' | 'newest' | 'closing_soon', resolved?: boolean, overdue?: boolean) {
+    async getMarkets(category?: string, sort?: 'volume' | 'newest' | 'closing_soon', resolved?: boolean, overdue?: boolean, withPositions?: boolean) {
         const params = new URLSearchParams()
         if (category) params.append('category', category)
         if (sort) params.append('sort', sort)
         if (resolved) params.append('resolved', 'true')
         if (overdue) params.append('overdue', 'true')
+        if (withPositions) params.append('withPositions', 'true')
 
         const response = await this.axiosInstance.get(`/markets?${params.toString()}`)
         return response.data as Market[]
@@ -274,6 +275,11 @@ class ApiClient {
     async getAdminUsers() {
         const response = await this.axiosInstance.get('/admin/users')
         return response.data as (User & { totalTrades: number })[]
+    }
+
+    async adjustBalance(userId: string, amount: number) {
+        const response = await this.axiosInstance.patch(`/admin/users/${userId}/balance`, { amount })
+        return response.data as { id: string; username: string; paperBalance: number }
     }
 }
 

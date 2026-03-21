@@ -19,12 +19,14 @@ export default function AdminUsersPage() {
     const [syncing, setSyncing] = useState(false)
     const [syncResult, setSyncResult] = useState<string | null>(null)
     const [resolving, setResolving] = useState<string | null>(null)
+    const [adjustingId, setAdjustingId] = useState<string | null>(null)
+    const [adjustAmount, setAdjustAmount] = useState<string>('')
 
     const loadMarkets = async () => {
         setMarketsLoading(true)
         try {
             const [active, overdue] = await Promise.all([
-                apiClient.getMarkets(undefined, 'closing_soon'),
+                apiClient.getMarkets(undefined, 'closing_soon', false, false, true),
                 apiClient.getMarkets(undefined, undefined, false, true),
             ])
             const seen = new Set<string>()
@@ -253,7 +255,32 @@ export default function AdminUsersPage() {
 
                                     {/* Balance */}
                                     <div className="col-span-2 text-right">
-                                        <span className="font-tabular text-sm text-pm-yes">${u.paperBalance.toFixed(2)}</span>
+                                        {adjustingId === u.id ? (
+                                            <div className="flex items-center justify-end gap-1">
+                                                <input
+                                                    type="number"
+                                                    value={adjustAmount}
+                                                    onChange={e => setAdjustAmount(e.target.value)}
+                                                    placeholder="±amount"
+                                                    className="w-20 px-1.5 py-0.5 bg-pm-surface border border-pm-border rounded text-xs text-pm-text focus:outline-none focus:border-pm-blue"
+                                                    autoFocus
+                                                />
+                                                <button onClick={async () => {
+                                                    const amt = parseFloat(adjustAmount)
+                                                    if (!isNaN(amt)) {
+                                                        const updated = await apiClient.adjustBalance(u.id, amt)
+                                                        setUsers(prev => prev.map(x => x.id === u.id ? { ...x, paperBalance: updated.paperBalance } : x))
+                                                        setSyncResult(`Adjusted ${u.username} by $${amt}`)
+                                                    }
+                                                    setAdjustingId(null); setAdjustAmount('')
+                                                }} className="text-pm-yes text-xs font-semibold">OK</button>
+                                                <button onClick={() => { setAdjustingId(null); setAdjustAmount('') }} className="text-pm-subtle text-xs">✕</button>
+                                            </div>
+                                        ) : (
+                                            <button onClick={() => setAdjustingId(u.id)} className="font-tabular text-sm text-pm-yes hover:underline">
+                                                ${u.paperBalance.toFixed(2)}
+                                            </button>
+                                        )}
                                     </div>
 
                                     {/* Trades */}

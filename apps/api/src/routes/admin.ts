@@ -48,5 +48,24 @@ export function registerAdminRoutes(prisma: PrismaClient) {
         })
     )
 
+    // PATCH /api/admin/users/:id/balance (admin only)
+    router.patch(
+        '/users/:id/balance',
+        authenticate as any,
+        requireAdmin as any,
+        asyncHandler(async (req: Request, res: Response) => {
+            const { amount } = req.body
+            if (typeof amount !== 'number') {
+                res.status(400).json({ error: 'amount must be a number' }); return
+            }
+            const user = await prisma.user.update({
+                where: { id: req.params.id },
+                data: { paperBalance: { increment: amount } },
+                select: { id: true, username: true, paperBalance: true },
+            })
+            res.json({ ...user, paperBalance: Number(user.paperBalance) })
+        })
+    )
+
     return router
 }
