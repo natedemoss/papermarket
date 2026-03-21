@@ -14,11 +14,10 @@ export function registerAuthRoutes(prisma: PrismaClient) {
     const authService = new AuthService(prisma, new UserService(prisma))
 
     const googleEnabled = !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET)
-    const rawBase = (process.env.API_BASE ?? '').trim().replace(/\/$/, '')
-    const API_BASE = rawBase.includes('/api/auth')
-        ? rawBase.split('/api/auth')[0]  // strip accidental path suffix
-        : rawBase || 'http://localhost:8080'
-    const GOOGLE_CALLBACK_URL = `${API_BASE}/api/auth/google/callback`
+    const railwayDomain = process.env.RAILWAY_PUBLIC_DOMAIN
+    const GOOGLE_CALLBACK_URL = railwayDomain
+        ? `https://${railwayDomain}/api/auth/google/callback`
+        : `http://localhost:8080/api/auth/google/callback`
 
     // POST /api/auth/register
     router.post(
