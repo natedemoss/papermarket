@@ -14,7 +14,10 @@ export function registerAuthRoutes(prisma: PrismaClient) {
     const authService = new AuthService(prisma, new UserService(prisma))
 
     const googleEnabled = !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET)
-    const API_BASE = (process.env.API_BASE ?? process.env.FRONTEND_URL?.replace(':3000', ':8080') ?? 'http://localhost:8080').trim().replace(/\/$/, '')
+    const rawBase = (process.env.API_BASE ?? '').trim().replace(/\/$/, '')
+    const API_BASE = rawBase.includes('/api/auth')
+        ? rawBase.split('/api/auth')[0]  // strip accidental path suffix
+        : rawBase || 'http://localhost:8080'
     const GOOGLE_CALLBACK_URL = `${API_BASE}/api/auth/google/callback`
 
     // POST /api/auth/register
