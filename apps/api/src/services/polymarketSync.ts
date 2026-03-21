@@ -17,8 +17,14 @@ interface PolymarketMarket {
     resolved?: boolean
     resolutionTime?: string
     winner?: string
-    events?: Array<{ tags?: Array<{ label?: string; slug?: string }> }>
+    events?: Array<{
+        title?: string
+        slug?: string
+        tags?: Array<{ label?: string; slug?: string }>
+        series?: Array<{ title?: string; slug?: string }>
+    }>
     tags?: Array<{ label?: string; slug?: string } | string>
+    clobTokenIds?: string  // JSON array of token IDs
 }
 
 function parseYesProb(market: PolymarketMarket): number | null {
@@ -35,21 +41,36 @@ function parseYesProb(market: PolymarketMarket): number | null {
 }
 
 function parseCategory(market: PolymarketMarket): string {
-    const tagSources = [
-        ...(market.tags || []),
-        ...((market.events || []).flatMap(e => e.tags || [])),
-    ]
-    const tagStr = tagSources
-        .map(t => (typeof t === 'string' ? t : t.label || t.slug || ''))
-        .join(' ')
-        .toLowerCase()
+    const parts: string[] = []
 
-    if (tagStr.includes('politic') || tagStr.includes('election') || tagStr.includes('government') || tagStr.includes('president')) return 'POLITICS'
-    if (tagStr.includes('crypto') || tagStr.includes('bitcoin') || tagStr.includes('ethereum') || tagStr.includes('defi') || tagStr.includes('web3')) return 'CRYPTO'
-    if (tagStr.includes('sport') || tagStr.includes('nba') || tagStr.includes('nfl') || tagStr.includes('mlb') || tagStr.includes('soccer') || tagStr.includes('tennis')) return 'SPORTS'
-    if (tagStr.includes('tech') || tagStr.includes('ai') || tagStr.includes('technology') || tagStr.includes('openai') || tagStr.includes('apple')) return 'TECH'
-    if (tagStr.includes('science') || tagStr.includes('health') || tagStr.includes('climate') || tagStr.includes('fda') || tagStr.includes('space')) return 'SCIENCE'
-    if (tagStr.includes('finance') || tagStr.includes('stock') || tagStr.includes('fed') || tagStr.includes('economy') || tagStr.includes('rate')) return 'FINANCE'
+    // Tags (legacy)
+    ;(market.tags || []).forEach(t =>
+        parts.push(typeof t === 'string' ? t : (t.label || t.slug || ''))
+    )
+
+    // Event title, slug, and series info (current Polymarket format)
+    ;(market.events || []).forEach(e => {
+        if (e.title) parts.push(e.title)
+        if (e.slug) parts.push(e.slug)
+        ;(e.tags || []).forEach(t => parts.push(t.label || t.slug || ''))
+        ;(e.series || []).forEach(s => {
+            if (s.title) parts.push(s.title)
+            if (s.slug) parts.push(s.slug)
+        })
+    })
+
+    // Also include the market question itself
+    if (market.question) parts.push(market.question)
+    if (market.slug) parts.push(market.slug)
+
+    const s = parts.join(' ').toLowerCase()
+
+    if (s.includes('politic') || s.includes('election') || s.includes('president') || s.includes('senate') || s.includes('congress') || s.includes('government') || s.includes('vote') || s.includes('ballot') || s.includes('democrat') || s.includes('republican') || s.includes('trump') || s.includes('biden') || s.includes('harris')) return 'POLITICS'
+    if (s.includes('bitcoin') || s.includes('ethereum') || s.includes('crypto') || s.includes(' btc') || s.includes(' eth') || s.includes('defi') || s.includes('solana') || s.includes('coinbase') || s.includes('blockchain') || s.includes('token') || s.includes('nft')) return 'CRYPTO'
+    if (s.includes('nba') || s.includes('nfl') || s.includes('mlb') || s.includes('nhl') || s.includes('soccer') || s.includes('football') || s.includes('basketball') || s.includes('baseball') || s.includes('tennis') || s.includes('golf') || s.includes('ufc') || s.includes('mma') || s.includes('premier league') || s.includes('champions league') || s.includes('world cup') || s.includes('ncaa') || s.includes('super bowl') || s.includes('nascar') || s.includes('formula') || s.includes(' f1 ') || s.includes('esport') || s.includes('league of legends') || s.includes('cs2') || s.includes('dota') || s.includes('valorant') || s.includes('match') || s.includes(' vs ') || s.includes(' win ') || s.includes('champion') || s.includes('playoff') || s.includes('tournament') || s.includes('series')) return 'SPORTS'
+    if (s.includes('openai') || s.includes('chatgpt') || s.includes('anthropic') || s.includes('google') || s.includes('apple') || s.includes('microsoft') || s.includes('meta ') || s.includes('nvidia') || s.includes(' ai ') || s.includes('artificial intelligence') || s.includes('tech') || s.includes('software') || s.includes('startup') || s.includes('ipo') || s.includes('elon') || s.includes('musk') || s.includes('spacex')) return 'TECH'
+    if (s.includes('climate') || s.includes('science') || s.includes('health') || s.includes('fda') || s.includes('drug') || s.includes('vaccine') || s.includes('nasa') || s.includes('space') || s.includes('asteroid') || s.includes('covid') || s.includes('disease')) return 'SCIENCE'
+    if (s.includes('fed ') || s.includes('federal reserve') || s.includes('interest rate') || s.includes('inflation') || s.includes('gdp') || s.includes('recession') || s.includes('stock') || s.includes('market cap') || s.includes('economy') || s.includes('finance') || s.includes('bank') || s.includes('treasury') || s.includes('s&p') || s.includes('dow') || s.includes('nasdaq')) return 'FINANCE'
     return 'OTHER'
 }
 
@@ -119,10 +140,19 @@ export class PolymarketSyncService {
                     where: { polymarketId: String(m.id) },
                 })
 
+                const outcomes = m.outcomes
+                    ? JSON.stringify(
+                        (typeof m.outcomes === 'string' ? JSON.parse(m.outcomes) : m.outcomes)
+                            .slice(0, 2)
+                      )
+                    : null
+
+                const clobTokenIds = m.clobTokenIds ?? null
+
                 if (existing) {
                     await this.prisma.market.update({
                         where: { id: existing.id },
-                        data: { yesProb, volume, closesAt: closeDate },
+                        data: { yesProb, volume, closesAt: closeDate, outcomes, category, clobTokenIds },
                     })
 
                     // Auto-resolve if Polymarket resolved it and we have positions
@@ -142,6 +172,8 @@ export class PolymarketSyncService {
                             closesAt: closeDate,
                             polymarketSynced: true,
                             imageUrl: m.image || null,
+                            outcomes,
+                            clobTokenIds,
                             createdById: admin.id,
                             resolvedAt: m.resolved && m.resolutionTime ? new Date(m.resolutionTime) : null,
                             resolvedYes: m.resolved ? (m.winner === 'Yes' || m.winner === 'YES') : null,

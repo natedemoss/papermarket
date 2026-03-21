@@ -32,6 +32,8 @@ interface Market {
     polymarketSynced: boolean
     imageUrl: string | null
     description: string | null
+    outcomes: string | null
+    clobTokenIds: string | null
 }
 
 interface Position {
@@ -178,10 +180,11 @@ class ApiClient {
     }
 
     // Market endpoints
-    async getMarkets(category?: string, sort?: 'volume' | 'newest' | 'closing_soon') {
+    async getMarkets(category?: string, sort?: 'volume' | 'newest' | 'closing_soon', resolved?: boolean) {
         const params = new URLSearchParams()
         if (category) params.append('category', category)
         if (sort) params.append('sort', sort)
+        if (resolved) params.append('resolved', 'true')
 
         const response = await this.axiosInstance.get(`/markets?${params.toString()}`)
         return response.data as Market[]
@@ -238,6 +241,11 @@ class ApiClient {
     }
 
     // Comment endpoints
+    async getPriceHistory(marketId: string, interval: string) {
+        const response = await this.axiosInstance.get(`/markets/${marketId}/prices-history?interval=${interval}`)
+        return response.data as { history: { t: number; p: number }[] }
+    }
+
     async getComments(marketId: string) {
         const response = await this.axiosInstance.get(`/markets/${marketId}/comments`)
         return response.data as Comment[]

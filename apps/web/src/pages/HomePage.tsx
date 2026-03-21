@@ -4,7 +4,26 @@ import { apiClient, Market } from '../lib/api'
 import { useAuth } from '../lib/store'
 import CategoryIcon from '../components/CategoryIcon'
 
-const CATEGORIES = ['All', 'Politics', 'Crypto', 'Finance', 'Tech', 'Science', 'Sports']
+type ViewMode = 'trending' | 'new' | 'breaking'
+
+const VIEW_TABS: { mode: ViewMode; label: string; sort: 'volume' | 'newest' | 'closing_soon' }[] = [
+    { mode: 'trending', label: 'Trending', sort: 'volume' },
+    { mode: 'new',      label: 'New',      sort: 'newest' },
+    { mode: 'breaking', label: 'Breaking', sort: 'closing_soon' },
+]
+
+const VIEW_ICONS: Record<ViewMode, JSX.Element> = {
+    trending: <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>,
+    new:      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>,
+    breaking: <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>,
+}
+
+const CATEGORY_MAP: Record<string, string> = {
+    Politics: 'POLITICS', Crypto: 'CRYPTO', Finance: 'FINANCE',
+    Tech: 'TECH', Science: 'SCIENCE', Sports: 'SPORTS', Other: 'OTHER',
+}
+
+const CATEGORIES = ['All', 'Politics', 'Crypto', 'Finance', 'Tech', 'Science', 'Sports', 'Other']
 
 const TICKER_ITEMS = [
     { change: '+18%', label: 'Fed signals rate pause through Q3', up: true },
@@ -34,9 +53,23 @@ function CategoryBadge({ category }: { category: string }) {
     )
 }
 
+function getOutcomeLabels(market: Market): [string, string] {
+    if (!market.outcomes) return ['YES', 'NO']
+    try {
+        const parsed = JSON.parse(market.outcomes)
+        if (Array.isArray(parsed) && parsed.length >= 2) {
+            const [a, b] = parsed
+            if ((a === 'Yes' || a === 'YES') && (b === 'No' || b === 'NO')) return ['YES', 'NO']
+            return [String(a).toUpperCase(), String(b).toUpperCase()]
+        }
+    } catch {}
+    return ['YES', 'NO']
+}
+
 function MarketCard({ market, index }: { market: Market; index: number }) {
     const yesProb = market.yesProb
     const noProb = 100 - yesProb
+    const [labelA, labelB] = getOutcomeLabels(market)
     const vol = market.volume >= 1000000
         ? `$${(market.volume / 1000000).toFixed(1)}M`
         : market.volume >= 1000
@@ -79,11 +112,11 @@ function MarketCard({ market, index }: { market: Market; index: number }) {
             {/* YES / NO */}
             <div className="flex gap-2">
                 <div className="flex-1 flex items-center justify-between bg-pm-yes-dim hover:bg-green-900 border border-pm-yes/20 rounded-lg px-3 py-2 transition-colors">
-                    <span className="text-pm-yes text-xs font-semibold">YES</span>
+                    <span className="text-pm-yes text-xs font-semibold">{labelA}</span>
                     <span className="font-tabular text-pm-yes font-bold">{yesProb}¢</span>
                 </div>
                 <div className="flex-1 flex items-center justify-between bg-pm-no-dim hover:bg-red-900 border border-pm-no/20 rounded-lg px-3 py-2 transition-colors">
-                    <span className="text-pm-no text-xs font-semibold">NO</span>
+                    <span className="text-pm-no text-xs font-semibold">{labelB}</span>
                     <span className="font-tabular text-pm-no font-bold">{noProb}¢</span>
                 </div>
             </div>
@@ -152,20 +185,18 @@ export default function HomePage() {
     const { user } = useAuth()
     const [markets, setMarkets] = useState<Market[]>([])
     const [activeCategory, setActiveCategory] = useState('All')
+    const [viewMode, setViewMode] = useState<ViewMode>('trending')
     const carouselRef = useRef<HTMLDivElement>(null)
 
-    useEffect(() => {
-        apiClient.getMarkets(undefined, 'volume').then(setMarkets).catch(() => {})
-    }, [])
+    const activeView = VIEW_TABS.find(v => v.mode === viewMode)!
 
-    const categoryMap: Record<string, string> = {
-        Politics: 'POLITICS', Crypto: 'CRYPTO', Finance: 'FINANCE',
-        Tech: 'TECH', Science: 'SCIENCE', Sports: 'SPORTS',
-    }
+    useEffect(() => {
+        apiClient.getMarkets(undefined, activeView.sort).then(setMarkets).catch(() => {})
+    }, [viewMode])
 
     const filteredMarkets = activeCategory === 'All'
         ? markets
-        : markets.filter(m => m.category === categoryMap[activeCategory])
+        : markets.filter(m => m.category === CATEGORY_MAP[activeCategory])
 
     const featuredMarkets = markets.slice(0, 7)
 
@@ -276,25 +307,44 @@ export default function HomePage() {
                             </div>
                         )}
 
-                        {/* Category tabs */}
-                        <div className="flex items-center gap-1 mb-5 overflow-x-auto no-scrollbar">
+                        {/* View mode tabs */}
+                        <div className="flex items-center gap-1 mb-1 border-b border-pm-border pb-0">
+                            {VIEW_TABS.map(tab => {
+                                const isActive = viewMode === tab.mode
+                                const activeStyle =
+                                    tab.mode === 'trending' ? 'text-amber-400 border-amber-400' :
+                                    tab.mode === 'new'      ? 'text-pm-blue border-pm-blue' :
+                                                              'text-pm-no border-pm-no'
+                                return (
+                                    <button
+                                        key={tab.mode}
+                                        onClick={() => setViewMode(tab.mode)}
+                                        className={`flex items-center gap-1.5 px-3 py-2.5 text-sm font-semibold whitespace-nowrap border-b-2 -mb-px transition-all ${
+                                            isActive ? activeStyle : 'text-pm-muted border-transparent hover:text-pm-text'
+                                        }`}
+                                    >
+                                        {VIEW_ICONS[tab.mode]}
+                                        {tab.label}
+                                    </button>
+                                )
+                            })}
+                        </div>
+
+                        {/* Category sub-tabs */}
+                        <div className="flex items-center gap-0.5 mb-5 overflow-x-auto no-scrollbar border-b border-pm-border pb-0">
                             {CATEGORIES.map(cat => (
                                 <button
                                     key={cat}
                                     onClick={() => setActiveCategory(cat)}
-                                    className={`px-3 py-1.5 rounded-md text-sm font-medium whitespace-nowrap transition-all ${
+                                    className={`px-3.5 py-2.5 text-xs font-medium whitespace-nowrap border-b-2 -mb-px transition-all ${
                                         activeCategory === cat
-                                            ? 'bg-pm-card text-pm-text border border-pm-border shadow-sm'
-                                            : 'text-pm-muted hover:text-pm-text hover:bg-pm-hover'
+                                            ? 'border-pm-blue text-pm-text'
+                                            : 'border-transparent text-pm-subtle hover:text-pm-muted'
                                     }`}
                                 >
                                     {cat}
                                 </button>
                             ))}
-                            <div className="ml-auto flex items-center gap-2 shrink-0">
-                                <span className="text-pm-subtle text-xs">Sort:</span>
-                                <span className="text-pm-muted text-xs font-medium">Volume</span>
-                            </div>
                         </div>
 
                         {/* Markets grid */}

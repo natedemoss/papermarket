@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { apiClient, Market, Comment } from '../lib/api'
 import { useAuth } from '../lib/store'
@@ -7,155 +7,148 @@ import { useAuth } from '../lib/store'
 
 type TimeRange = '1H' | '1D' | '1W' | '1M' | 'ALL'
 
-function generateHistory(currentProb: number, points: number, volatility: number): number[] {
-    const history: number[] = []
-    // Walk backwards from current probability
-    let p = currentProb
-    for (let i = 0; i < points; i++) {
-        history.unshift(Math.min(99, Math.max(1, Math.round(p))))
-        const drift = (Math.random() - 0.52) * volatility
-        p = p - drift
-        p = Math.min(99, Math.max(1, p))
-    }
-    return history
-}
+const TIME_RANGES: TimeRange[] = ['1H', '1D', '1W', '1M', 'ALL']
 
-const TIME_RANGES: { label: TimeRange; points: number; vol: number; xLabels: string[] }[] = [
-    { label: '1H', points: 60, vol: 0.4, xLabels: ['60m', '45m', '30m', '15m', 'Now'] },
-    { label: '1D', points: 96, vol: 1.2, xLabels: ['24h', '18h', '12h', '6h', 'Now'] },
-    { label: '1W', points: 168, vol: 2.5, xLabels: ['7d', '5d', '3d', '1d', 'Now'] },
-    { label: '1M', points: 120, vol: 4.0, xLabels: ['30d', '22d', '15d', '7d', 'Now'] },
-    { label: 'ALL', points: 180, vol: 6.0, xLabels: ['6mo', '4mo', '2mo', '1mo', 'Now'] },
-]
+function formatTs(ts: number, range: TimeRange): string {
+    const d = new Date(ts * 1000)
+    if (range === '1H' || range === '1D') return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    if (range === '1W') return d.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    return d.toLocaleDateString([], { month: 'short', day: 'numeric', year: '2-digit' })
+}
 
 function PriceChart({ market, activeRange, onRangeChange }: {
     market: Market
     activeRange: TimeRange
     onRangeChange: (r: TimeRange) => void
 }) {
-    const rangeConfig = TIME_RANGES.find(r => r.label === activeRange) ?? TIME_RANGES[2]
+    const [labelA, labelB] = getOutcomeLabels(market)
+    const [history, setHistory] = useState<{ t: number; p: number }[]>([])
+    const [loading, setLoading] = useState(true)
+    const [hover, setHover] = useState<{ x: number; y: number; price: number; ts: number } | null>(null)
+    const svgRef = useRef<SVGSVGElement>(null)
 
-    const yesHistory = useMemo(
-        () => generateHistory(market.yesProb, rangeConfig.points, rangeConfig.vol),
-        [market.id, activeRange, market.yesProb]
-    )
+    useEffect(() => {
+        setLoading(true)
+        setHover(null)
+        apiClient.getPriceHistory(market.id, activeRange)
+            .then(d => setHistory(d.history || []))
+            .catch(() => setHistory([]))
+            .finally(() => setLoading(false))
+    }, [market.id, activeRange])
 
-    const min = Math.max(0, Math.min(...yesHistory) - 5)
-    const max = Math.min(100, Math.max(...yesHistory) + 5)
-    const range = max - min || 1
-
-    const W = 600
-    const H = 180
-    const PAD = { top: 12, right: 8, bottom: 24, left: 32 }
+    const W = 600, H = 180
+    const PAD = { top: 12, right: 8, bottom: 24, left: 36 }
     const chartW = W - PAD.left - PAD.right
     const chartH = H - PAD.top - PAD.bottom
 
-    const toX = (i: number) => PAD.left + (i / (yesHistory.length - 1)) * chartW
-    const toY = (v: number) => PAD.top + chartH - ((v - min) / range) * chartH
-
-    const linePath = yesHistory.map((v, i) => `${i === 0 ? 'M' : 'L'} ${toX(i).toFixed(1)} ${toY(v).toFixed(1)}`).join(' ')
-    const areaPath = `${linePath} L ${toX(yesHistory.length - 1).toFixed(1)} ${(PAD.top + chartH).toFixed(1)} L ${PAD.left} ${(PAD.top + chartH).toFixed(1)} Z`
-
-    const currentVal = yesHistory[yesHistory.length - 1]
-    const startVal = yesHistory[0]
+    const prices = history.map(h => Math.round(h.p * 100))
+    const currentVal = prices.length > 0 ? prices[prices.length - 1] : market.yesProb
+    const startVal = prices.length > 0 ? prices[0] : market.yesProb
     const change = currentVal - startVal
     const isUp = change >= 0
 
-    // Y-axis grid lines
-    const gridLines = [25, 50, 75].filter(v => v >= min && v <= max)
+    const minP = prices.length > 1 ? Math.max(0, Math.min(...prices) - 3) : 0
+    const maxP = prices.length > 1 ? Math.min(100, Math.max(...prices) + 3) : 100
+    const rangeP = maxP - minP || 1
+
+    const toX = (i: number) => PAD.left + (i / Math.max(prices.length - 1, 1)) * chartW
+    const toY = (v: number) => PAD.top + chartH - ((v - minP) / rangeP) * chartH
+
+    const linePath = prices.map((v, i) => `${i === 0 ? 'M' : 'L'} ${toX(i).toFixed(1)} ${toY(v).toFixed(1)}`).join(' ')
+    const areaPath = prices.length > 1 ? `${linePath} L ${toX(prices.length - 1).toFixed(1)} ${(PAD.top + chartH).toFixed(1)} L ${PAD.left} ${(PAD.top + chartH).toFixed(1)} Z` : ''
+    const gridLines = [25, 50, 75].filter(v => v >= minP && v <= maxP)
+    const xTicks = prices.length > 1 ? [0, 0.25, 0.5, 0.75, 1].map(frac => {
+        const idx = Math.round(frac * (history.length - 1))
+        return { x: toX(idx), label: formatTs(history[idx]?.t, activeRange) }
+    }) : []
+
+    const handleMouseMove = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
+        if (!svgRef.current || prices.length < 2) return
+        const rect = svgRef.current.getBoundingClientRect()
+        const svgX = ((e.clientX - rect.left) / rect.width) * W
+        const idx = Math.max(0, Math.min(prices.length - 1, Math.round(((svgX - PAD.left) / chartW) * (prices.length - 1))))
+        setHover({ x: toX(idx), y: toY(prices[idx]), price: prices[idx], ts: history[idx]?.t })
+    }, [prices, history])
+
+    const displayPrice = hover ? hover.price : currentVal
+    const displayChange = hover ? hover.price - startVal : change
 
     return (
         <div className="bg-pm-card border border-pm-border rounded-xl overflow-hidden">
-            {/* Chart header */}
             <div className="px-5 pt-4 pb-3 flex items-start justify-between border-b border-pm-border">
                 <div>
                     <div className="flex items-baseline gap-3">
                         <span className="text-4xl font-bold text-pm-text" style={{ fontFamily: 'DM Sans', letterSpacing: '-0.03em' }}>
-                            {currentVal}¢
+                            {displayPrice}¢
                         </span>
-                        <span className={`font-tabular text-sm font-semibold ${isUp ? 'text-pm-yes' : 'text-pm-no'}`}>
-                            {isUp ? '+' : ''}{change}¢ ({activeRange})
+                        <span className={`font-tabular text-sm font-semibold ${displayChange >= 0 ? 'text-pm-yes' : 'text-pm-no'}`}>
+                            {displayChange >= 0 ? '+' : ''}{displayChange}¢ ({activeRange})
                         </span>
                     </div>
-                    <p className="text-pm-muted text-xs mt-0.5">YES probability</p>
+                    <p className="text-pm-muted text-xs mt-0.5">
+                        {hover ? formatTs(hover.ts, activeRange) : `${labelA} probability`}
+                    </p>
                 </div>
                 <div className="flex gap-1">
                     {TIME_RANGES.map(r => (
-                        <button
-                            key={r.label}
-                            onClick={() => onRangeChange(r.label)}
+                        <button key={r} onClick={() => onRangeChange(r)}
                             className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
-                                activeRange === r.label
-                                    ? 'bg-pm-surface text-pm-text border border-pm-border'
-                                    : 'text-pm-muted hover:text-pm-text'
-                            }`}
-                        >
-                            {r.label}
-                        </button>
+                                activeRange === r ? 'bg-pm-surface text-pm-text border border-pm-border' : 'text-pm-muted hover:text-pm-text'
+                            }`}>{r}</button>
                     ))}
                 </div>
             </div>
 
-            {/* SVG Chart */}
-            <div className="px-2 pt-2 pb-1">
-                <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="w-full" style={{ height: 180 }}>
+            <div className="px-2 pt-2 pb-1 relative">
+                {loading && (
+                    <div className="absolute inset-0 flex items-center justify-center z-10 bg-pm-card/80">
+                        <div className="w-4 h-4 border-2 border-pm-border border-t-pm-blue rounded-full animate-spin" />
+                    </div>
+                )}
+                <svg ref={svgRef} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="w-full cursor-crosshair" style={{ height: 180 }}
+                    onMouseMove={handleMouseMove} onMouseLeave={() => setHover(null)}>
                     <defs>
                         <linearGradient id={`grad-${market.id}`} x1="0" y1="0" x2="0" y2="1">
                             <stop offset="0%" stopColor={isUp ? '#00C278' : '#FF5A5A'} stopOpacity="0.25" />
                             <stop offset="100%" stopColor={isUp ? '#00C278' : '#FF5A5A'} stopOpacity="0" />
                         </linearGradient>
                     </defs>
-
-                    {/* Grid lines */}
                     {gridLines.map(v => (
                         <g key={v}>
-                            <line
-                                x1={PAD.left} y1={toY(v)}
-                                x2={W - PAD.right} y2={toY(v)}
-                                stroke="#2A2A2A" strokeWidth="1"
-                            />
-                            <text x={PAD.left - 4} y={toY(v) + 4} textAnchor="end" fill="#555" fontSize="9" fontFamily="DM Mono">
-                                {v}¢
-                            </text>
+                            <line x1={PAD.left} y1={toY(v)} x2={W - PAD.right} y2={toY(v)} stroke="#2A2A2A" strokeWidth="1" />
+                            <text x={PAD.left - 4} y={toY(v) + 4} textAnchor="end" fill="#555" fontSize="9" fontFamily="DM Mono">{v}¢</text>
                         </g>
                     ))}
-
-                    {/* Area fill */}
-                    <path d={areaPath} fill={`url(#grad-${market.id})`} />
-
-                    {/* Line */}
-                    <path d={linePath} fill="none" stroke={isUp ? '#00C278' : '#FF5A5A'} strokeWidth="1.5" strokeLinejoin="round" />
-
-                    {/* Current price dot */}
-                    <circle
-                        cx={toX(yesHistory.length - 1)}
-                        cy={toY(currentVal)}
-                        r="3"
-                        fill={isUp ? '#00C278' : '#FF5A5A'}
-                    />
-
-                    {/* X-axis labels */}
-                    {rangeConfig.xLabels.map((label, i) => {
-                        const x = PAD.left + (i / (rangeConfig.xLabels.length - 1)) * chartW
-                        return (
-                            <text key={i} x={x} y={H - 4} textAnchor="middle" fill="#555" fontSize="9" fontFamily="DM Mono">
-                                {label}
-                            </text>
-                        )
-                    })}
+                    {prices.length > 1 && <>
+                        <path d={areaPath} fill={`url(#grad-${market.id})`} />
+                        <path d={linePath} fill="none" stroke={isUp ? '#00C278' : '#FF5A5A'} strokeWidth="1.5" strokeLinejoin="round" />
+                        <circle cx={toX(prices.length - 1)} cy={toY(currentVal)} r="3" fill={isUp ? '#00C278' : '#FF5A5A'} />
+                    </>}
+                    {xTicks.map((tick, i) => (
+                        <text key={i} x={tick.x} y={H - 4} textAnchor="middle" fill="#555" fontSize="8" fontFamily="DM Mono">{tick.label}</text>
+                    ))}
+                    {hover && prices.length > 1 && (
+                        <g>
+                            <line x1={hover.x} y1={PAD.top} x2={hover.x} y2={PAD.top + chartH} stroke="#555" strokeWidth="1" strokeDasharray="3,3" />
+                            <circle cx={hover.x} cy={hover.y} r="4" fill={isUp ? '#00C278' : '#FF5A5A'} stroke="#111" strokeWidth="1.5" />
+                            <g transform={`translate(${Math.min(hover.x + 8, W - 72)}, ${Math.max(hover.y - 24, PAD.top)})`}>
+                                <rect x="0" y="0" width="64" height="20" rx="3" fill="#1A1A1A" stroke="#333" strokeWidth="1" />
+                                <text x="32" y="14" textAnchor="middle" fill="#fff" fontSize="11" fontFamily="DM Mono" fontWeight="600">{hover.price}¢</text>
+                            </g>
+                        </g>
+                    )}
                 </svg>
             </div>
 
-            {/* NO line summary */}
             <div className="px-5 pb-4 flex items-center gap-6 border-t border-pm-border pt-3">
                 <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-pm-yes" />
-                    <span className="text-pm-muted text-xs">YES</span>
+                    <span className="text-pm-muted text-xs">{labelA}</span>
                     <span className="font-tabular text-pm-yes text-xs font-semibold">{market.yesProb}¢</span>
                 </div>
                 <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-pm-no" />
-                    <span className="text-pm-muted text-xs">NO</span>
+                    <span className="text-pm-muted text-xs">{labelB}</span>
                     <span className="font-tabular text-pm-no text-xs font-semibold">{100 - market.yesProb}¢</span>
                 </div>
                 <div className="ml-auto font-tabular text-xs text-pm-subtle">
@@ -340,6 +333,19 @@ function CommentsSection({ marketId }: { marketId: string }) {
 
 // ─── Trade Panel ──────────────────────────────────────────────────────────────
 
+function getOutcomeLabels(market: Market): [string, string] {
+    if (!market.outcomes) return ['YES', 'NO']
+    try {
+        const parsed = JSON.parse(market.outcomes)
+        if (Array.isArray(parsed) && parsed.length >= 2) {
+            const [a, b] = parsed
+            if ((a === 'Yes' || a === 'YES') && (b === 'No' || b === 'NO')) return ['YES', 'NO']
+            return [String(a).toUpperCase(), String(b).toUpperCase()]
+        }
+    } catch {}
+    return ['YES', 'NO']
+}
+
 function TradePanel({ market, onTradeSuccess }: {
     market: Market
     onTradeSuccess: (newProb: number, newVolume: number, newBalance: number) => void
@@ -351,6 +357,8 @@ function TradePanel({ market, onTradeSuccess }: {
     const [error, setError] = useState<string | null>(null)
     const [success, setSuccess] = useState<string | null>(null)
 
+    const [labelA, labelB] = getOutcomeLabels(market)
+    const sideLabel = side === 'YES' ? labelA : labelB
     const price = side === 'YES' ? market.yesProb / 100 : (100 - market.yesProb) / 100
     const shares = amount && !isNaN(parseFloat(amount)) ? parseFloat(amount) / price : 0
 
@@ -369,7 +377,7 @@ function TradePanel({ market, onTradeSuccess }: {
                 result.userBalance
             )
             setAmount('100')
-            setSuccess(`Bought ${result.position.shares.toFixed(2)} ${side} @ ${(price * 100).toFixed(0)}¢`)
+            setSuccess(`Bought ${result.position.shares.toFixed(2)} ${sideLabel} @ ${(price * 100).toFixed(0)}¢`)
             setTimeout(() => setSuccess(null), 5000)
         } catch (err: any) {
             setError(err.response?.data?.error || 'Trade failed')
@@ -380,21 +388,24 @@ function TradePanel({ market, onTradeSuccess }: {
         <div className="bg-pm-card border border-pm-border rounded-xl overflow-hidden sticky top-20">
             {/* YES / NO toggle */}
             <div className="grid grid-cols-2 border-b border-pm-border">
-                {(['YES', 'NO'] as const).map(s => (
-                    <button
-                        key={s}
-                        onClick={() => setSide(s)}
-                        className={`py-3.5 text-sm font-bold transition-colors border-b-2 ${
-                            side === s
-                                ? s === 'YES'
-                                    ? 'text-pm-yes border-pm-yes bg-pm-yes-dim'
-                                    : 'text-pm-no border-pm-no bg-pm-no-dim'
-                                : 'text-pm-muted border-transparent hover:text-pm-text'
-                        }`}
-                    >
-                        {s} · {s === 'YES' ? market.yesProb : 100 - market.yesProb}¢
-                    </button>
-                ))}
+                {(['YES', 'NO'] as const).map(s => {
+                    const label = s === 'YES' ? labelA : labelB
+                    return (
+                        <button
+                            key={s}
+                            onClick={() => setSide(s)}
+                            className={`py-3.5 text-sm font-bold transition-colors border-b-2 ${
+                                side === s
+                                    ? s === 'YES'
+                                        ? 'text-pm-yes border-pm-yes bg-pm-yes-dim'
+                                        : 'text-pm-no border-pm-no bg-pm-no-dim'
+                                    : 'text-pm-muted border-transparent hover:text-pm-text'
+                            }`}
+                        >
+                            {label} · {s === 'YES' ? market.yesProb : 100 - market.yesProb}¢
+                        </button>
+                    )
+                })}
             </div>
 
             <div className="p-4 space-y-4">
@@ -457,7 +468,7 @@ function TradePanel({ market, onTradeSuccess }: {
                                     : 'bg-pm-no hover:bg-red-400 text-white disabled:opacity-40'
                             }`}
                         >
-                            {trading ? 'Placing order...' : `Buy ${side}`}
+                            {trading ? 'Placing order...' : `Buy ${sideLabel}`}
                         </button>
                         <p className="font-tabular text-pm-subtle text-2xs text-center">
                             Balance: ${Number(user.paperBalance).toFixed(2)}

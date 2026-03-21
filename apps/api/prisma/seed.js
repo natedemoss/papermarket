@@ -4,7 +4,7 @@ const bcrypt = require('bcrypt')
 const p = new PrismaClient()
 
 async function main() {
-    const adminPassword = process.env.ADMIN_PASSWORD || 'e8aG6$Rs'
+    const adminPassword = process.env.ADMIN_PASSWORD || 'PaperAdmin2025!'
     const hash = await bcrypt.hash(adminPassword, 10)
 
     const user = await p.user.upsert({

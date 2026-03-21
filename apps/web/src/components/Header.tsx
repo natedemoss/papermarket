@@ -37,7 +37,7 @@ export default function Header() {
         { label: 'Leaderboard', path: '/leaderboard' },
         { label: 'Info', path: '/info' },
         ...(user ? [{ label: 'Portfolio', path: '/portfolio' }] : []),
-        ...(user?.isAdmin ? [{ label: 'Users', path: '/admin/users' }] : []),
+        ...(user?.isAdmin ? [{ label: 'Admin', path: '/admin/users' }] : []),
     ]
 
     return (

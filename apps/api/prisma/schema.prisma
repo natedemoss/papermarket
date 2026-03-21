@@ -52,6 +52,8 @@ model Market {
   polymarketSynced   Boolean  @default(false)
   imageUrl           String?
   description        String?  @db.Text
+  outcomes           String?  // JSON array e.g. ["VCU","Illinois"] or ["Yes","No"]
+  clobTokenIds       String?  // JSON array of CLOB token IDs for price history
 
   creator            User     @relation("CreatedMarkets", fields: [createdById], references: [id], onDelete: Cascade)
   positions          Position[]

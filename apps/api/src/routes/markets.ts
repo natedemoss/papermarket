@@ -19,8 +19,8 @@ export function registerMarketRoutes(prisma: PrismaClient) {
     router.get(
         '/',
         asyncHandler(async (req: Request, res: Response) => {
-            const { category, sort } = req.query as any
-            const markets = await marketService.getAll({ category, sort })
+            const { category, sort, resolved } = req.query as any
+            const markets = await marketService.getAll({ category, sort, resolved: resolved === 'true' })
             res.json(markets)
         })
     )
@@ -55,6 +55,28 @@ export function registerMarketRoutes(prisma: PrismaClient) {
         asyncHandler(async (req: Request, res: Response) => {
             const market = await marketService.resolve(req.params.id, req.body.outcome, req.user!.id)
             res.json(market)
+        })
+    )
+
+    // GET /api/markets/:id/prices-history
+    router.get(
+        '/:id/prices-history',
+        asyncHandler(async (req: Request, res: Response) => {
+            const market = await prisma.market.findUnique({ where: { id: req.params.id }, select: { clobTokenIds: true } })
+            if (!market?.clobTokenIds) { res.json({ history: [] }); return }
+
+            const tokenId = JSON.parse(market.clobTokenIds)[0]
+            if (!tokenId) { res.json({ history: [] }); return }
+
+            const interval = (req.query.interval as string) || '1w'
+            const fidelityMap: Record<string, number> = { '1H': 1, '1D': 15, '1W': 60, '1M': 240, 'ALL': 1440 }
+            const fidelity = fidelityMap[interval] ?? 60
+
+            const clobUrl = `https://clob.polymarket.com/prices-history?market=${tokenId}&interval=${interval.toLowerCase()}&fidelity=${fidelity}`
+            const upstream = await fetch(clobUrl)
+            if (!upstream.ok) { res.json({ history: [] }); return }
+            const data = await upstream.json() as any
+            res.json({ history: data.history || [] })
         })
     )
 

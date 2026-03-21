@@ -7,17 +7,20 @@ import { mapPolymarketCategory } from '../types/polymarket'
 export class MarketService {
     constructor(private prisma: PrismaClient) {}
 
-    async getAll(params?: { category?: string; sort?: 'volume' | 'newest' | 'closing_soon' }) {
-        const { category, sort } = params || {}
+    async getAll(params?: { category?: string; sort?: 'volume' | 'newest' | 'closing_soon'; resolved?: boolean }) {
+        const { category, sort, resolved } = params || {}
         const now = new Date()
 
-        const where: any = {
-            resolvedAt: null,
-            OR: [
-                { closesAt: null },
-                { closesAt: { gt: now } },
-            ],
-        }
+        const where: any = resolved
+            ? { resolvedAt: { not: null } }
+            : {
+                resolvedAt: null,
+                OR: [
+                    { closesAt: null },
+                    { closesAt: { gt: now } },
+                ],
+            }
+
         if (category) {
             where.category = category
         }
