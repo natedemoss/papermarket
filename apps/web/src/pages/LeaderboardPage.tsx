@@ -1,101 +1,103 @@
 import { useState, useEffect } from 'react'
 import { apiClient, LeaderboardEntry } from '../lib/api'
 
+const RANK_COLORS = ['text-yellow-400', 'text-slate-300', 'text-orange-400']
+
 export default function LeaderboardPage() {
     const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
 
     useEffect(() => {
-        const fetchLeaderboard = async () => {
-            setIsLoading(true)
-            try {
-                const data = await apiClient.getLeaderboard()
-                setLeaderboard(data)
-                setError(null)
-            } catch (err) {
-                setError('Failed to load leaderboard')
-            } finally {
-                setIsLoading(false)
-            }
-        }
-        fetchLeaderboard()
+        setIsLoading(true)
+        apiClient.getLeaderboard()
+            .then(data => { setLeaderboard(data); setError(null) })
+            .catch(() => setError('Failed to load leaderboard'))
+            .finally(() => setIsLoading(false))
     }, [])
 
     return (
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <h1 className="text-4xl font-bold text-white mb-8">Global Leaderboard</h1>
+        <div className="min-h-screen bg-pm-bg">
+            <div className="max-w-screen-xl mx-auto px-4 py-6">
+                <h1 className="text-xl font-bold text-pm-text mb-6">Leaderboard</h1>
 
-            {error && (
-                <div className="bg-red-900 border border-red-700 text-red-100 px-4 py-3 rounded-lg mb-6">
-                    {error}
-                </div>
-            )}
-
-            {isLoading ? (
-                <div className="text-center py-12">
-                    <p className="text-slate-400">Loading leaderboard...</p>
-                </div>
-            ) : leaderboard.length === 0 ? (
-                <div className="text-center py-12">
-                    <p className="text-slate-400">No traders yet</p>
-                </div>
-            ) : (
-                <div className="bg-slate-800 border border-slate-700 rounded-lg overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="w-full">
-                            <thead>
-                                <tr className="bg-slate-700 border-b border-slate-600">
-                                    <th className="px-6 py-4 text-left text-sm font-semibold text-white">Rank</th>
-                                    <th className="px-6 py-4 text-left text-sm font-semibold text-white">Trader</th>
-                                    <th className="px-6 py-4 text-right text-sm font-semibold text-white">P&L</th>
-                                    <th className="px-6 py-4 text-right text-sm font-semibold text-white">Trades</th>
-                                    <th className="px-6 py-4 text-right text-sm font-semibold text-white">Balance</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {leaderboard.map((entry, index) => (
-                                    <tr
-                                        key={entry.user.id}
-                                        className={`border-b border-slate-600 ${index % 2 === 0 ? 'bg-slate-800' : 'bg-slate-750'
-                                            } hover:bg-slate-700 transition`}
-                                    >
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-2">
-                                                {entry.rank <= 3 && (
-                                                    <span className="text-lg">
-                                                        {entry.rank === 1 ? '🥇' : entry.rank === 2 ? '🥈' : '🥉'}
-                                                    </span>
-                                                )}
-                                                <span className="font-semibold text-white">#{entry.rank}</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div>
-                                                <p className="font-semibold text-white">{entry.user.username}</p>
-                                                <p className="text-sm text-slate-400">{entry.user.email}</p>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 text-right">
-                                            <p className={`font-semibold ${entry.pnl >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                                                {entry.pnl >= 0 ? '+' : ''} ${entry.pnl.toFixed(2)}
-                                            </p>
-                                        </td>
-                                        <td className="px-6 py-4 text-right">
-                                            <p className="text-white">{entry.totalTrades}</p>
-                                        </td>
-                                        <td className="px-6 py-4 text-right">
-                                            <p className="font-semibold text-white">
-                                                ${entry.user.paperBalance.toFixed(2)}
-                                            </p>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                {error && (
+                    <div className="bg-red-950 border border-pm-no/30 text-pm-no px-3 py-2.5 rounded-lg mb-6 text-xs">
+                        {error}
                     </div>
-                </div>
-            )}
+                )}
+
+                {isLoading ? (
+                    <div className="text-center py-20">
+                        <div className="inline-block w-5 h-5 border-2 border-pm-border border-t-pm-blue rounded-full animate-spin" />
+                    </div>
+                ) : leaderboard.length === 0 ? (
+                    <div className="text-center py-20 text-pm-muted text-sm">No traders yet</div>
+                ) : (
+                    <div className="bg-pm-card border border-pm-border rounded-xl overflow-hidden">
+                        {/* Header */}
+                        <div className="grid grid-cols-12 px-4 py-2.5 border-b border-pm-border text-xs font-medium text-pm-subtle uppercase tracking-wider">
+                            <div className="col-span-1">Rank</div>
+                            <div className="col-span-4">Trader</div>
+                            <div className="col-span-3 text-right">P&amp;L</div>
+                            <div className="col-span-2 text-right">Trades</div>
+                            <div className="col-span-2 text-right">Balance</div>
+                        </div>
+
+                        {leaderboard.map((entry, index) => (
+                            <div
+                                key={entry.user.id}
+                                className={`grid grid-cols-12 px-4 py-3.5 items-center border-b border-pm-border last:border-0 hover:bg-pm-hover transition-colors ${
+                                    index < 3 ? 'bg-pm-surface' : ''
+                                }`}
+                            >
+                                {/* Rank */}
+                                <div className="col-span-1">
+                                    <span className={`font-tabular font-bold text-sm ${RANK_COLORS[index] ?? 'text-pm-muted'}`}>
+                                        #{entry.rank}
+                                    </span>
+                                </div>
+
+                                {/* Trader */}
+                                <div className="col-span-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
+                                            index === 0 ? 'bg-yellow-900 text-yellow-400' :
+                                            index === 1 ? 'bg-slate-700 text-slate-300' :
+                                            index === 2 ? 'bg-orange-900 text-orange-400' :
+                                            'bg-pm-surface text-pm-muted'
+                                        }`}>
+                                            {entry.user.username[0].toUpperCase()}
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-medium text-pm-text">{entry.user.username}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* P&L */}
+                                <div className="col-span-3 text-right">
+                                    <span className={`font-tabular text-sm font-semibold ${entry.pnl >= 0 ? 'text-pm-yes' : 'text-pm-no'}`}>
+                                        {entry.pnl >= 0 ? '+' : ''}${entry.pnl.toFixed(2)}
+                                    </span>
+                                </div>
+
+                                {/* Trades */}
+                                <div className="col-span-2 text-right">
+                                    <span className="font-tabular text-sm text-pm-muted">{entry.totalTrades}</span>
+                                </div>
+
+                                {/* Balance */}
+                                <div className="col-span-2 text-right">
+                                    <span className="font-tabular text-sm font-semibold text-pm-text">
+                                        ${entry.user.paperBalance.toFixed(2)}
+                                    </span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
         </div>
     )
 }

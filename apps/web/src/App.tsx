@@ -16,7 +16,6 @@ import ProtectedRoute from './components/ProtectedRoute'
 export default function App() {
     const { accessToken, setUser, setLoading } = useAuth()
 
-    // Restore user session on mount
     useEffect(() => {
         if (accessToken) {
             setLoading(true)
@@ -32,26 +31,28 @@ export default function App() {
 
     return (
         <BrowserRouter>
-            <Header />
-            <main className="min-h-screen bg-white">
-                <Routes>
-                    <Route path="/" element={<HomePage />} />
-                    <Route path="/login" element={<LoginPage />} />
-                    <Route path="/register" element={<RegisterPage />} />
-                    <Route path="/markets" element={<MarketsPage />} />
-                    <Route path="/markets/:id" element={<MarketDetailPage />} />
-                    <Route
-                        path="/portfolio"
-                        element={
-                            <ProtectedRoute>
-                                <PortfolioPage />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route path="/leaderboard" element={<LeaderboardPage />} />
-                    <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
-            </main>
+            <div className="min-h-screen bg-pm-bg text-pm-text">
+                <Header />
+                <main>
+                    <Routes>
+                        <Route path="/" element={<HomePage />} />
+                        <Route path="/login" element={<LoginPage />} />
+                        <Route path="/register" element={<RegisterPage />} />
+                        <Route path="/markets" element={<MarketsPage />} />
+                        <Route path="/markets/:id" element={<MarketDetailPage />} />
+                        <Route
+                            path="/portfolio"
+                            element={
+                                <ProtectedRoute>
+                                    <PortfolioPage />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route path="/leaderboard" element={<LeaderboardPage />} />
+                        <Route path="*" element={<Navigate to="/" replace />} />
+                    </Routes>
+                </main>
+            </div>
         </BrowserRouter>
     )
 }

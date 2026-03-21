@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../lib/store'
 import { apiClient } from '../lib/api'
@@ -6,79 +7,102 @@ export default function Header() {
     const { user, clearAuth } = useAuth()
     const navigate = useNavigate()
     const location = useLocation()
+    const [searchOpen, setSearchOpen] = useState(false)
+    const [searchQuery, setSearchQuery] = useState('')
 
     const handleLogout = async () => {
         try {
             await apiClient.logout()
-            clearAuth()
-            localStorage.removeItem('accessToken')
-            localStorage.removeItem('refreshToken')
-            navigate('/')
-        } catch (error) {
-            console.error('Logout failed:', error)
-        }
+        } catch (_) {}
+        clearAuth()
+        localStorage.removeItem('accessToken')
+        localStorage.removeItem('refreshToken')
+        navigate('/')
     }
 
-    const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + '/')
+    const isActive = (path: string) =>
+        location.pathname === path || location.pathname.startsWith(path + '/')
+
+    const navLinks = [
+        { label: 'Markets', path: '/markets' },
+        { label: 'Leaderboard', path: '/leaderboard' },
+        ...(user ? [{ label: 'Portfolio', path: '/portfolio' }] : []),
+    ]
 
     return (
-        <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between items-center py-4">
+        <>
+            <header className="bg-pm-surface border-b border-pm-border sticky top-0 z-50">
+                <div className="max-w-screen-xl mx-auto px-4 h-14 flex items-center gap-4">
                     {/* Logo */}
-                    <Link to="/" className="flex items-center gap-3">
-                        <span className="text-2xl font-bold text-gray-900">PaperMarket</span>
+                    <Link to="/" className="flex items-center gap-2 shrink-0">
+                        <div className="w-7 h-7 bg-pm-blue rounded-md flex items-center justify-center">
+                            <span className="text-white font-bold text-sm">P</span>
+                        </div>
+                        <span className="font-semibold text-pm-text text-sm tracking-tight">PaperMarket</span>
                     </Link>
 
-                    {/* Nav Links */}
-                    <nav className="hidden md:flex gap-8">
-                        <Link
-                            to="/markets"
-                            className={`font-medium transition pb-1 border-b-2 ${
-                                isActive('/markets')
-                                    ? 'text-blue-600 border-blue-600'
-                                    : 'text-gray-600 border-transparent hover:text-gray-900'
-                            }`}
-                        >
-                            Markets
-                        </Link>
-                        <Link
-                            to="/leaderboard"
-                            className={`font-medium transition pb-1 border-b-2 ${
-                                isActive('/leaderboard')
-                                    ? 'text-blue-600 border-blue-600'
-                                    : 'text-gray-600 border-transparent hover:text-gray-900'
-                            }`}
-                        >
-                            Leaderboard
-                        </Link>
-                        {user && (
+                    {/* Nav */}
+                    <nav className="hidden md:flex items-center gap-1 ml-2">
+                        {navLinks.map(({ label, path }) => (
                             <Link
-                                to="/portfolio"
-                                className={`font-medium transition pb-1 border-b-2 ${
-                                    isActive('/portfolio')
-                                        ? 'text-blue-600 border-blue-600'
-                                        : 'text-gray-600 border-transparent hover:text-gray-900'
+                                key={path}
+                                to={path}
+                                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                                    isActive(path)
+                                        ? 'bg-pm-card text-pm-text'
+                                        : 'text-pm-muted hover:text-pm-text hover:bg-pm-hover'
                                 }`}
                             >
-                                Portfolio
+                                {label}
                             </Link>
-                        )}
+                        ))}
                     </nav>
 
-                    {/* User Section */}
-                    <div className="flex items-center gap-4">
+                    {/* Search bar */}
+                    <div className="flex-1 max-w-md mx-auto hidden md:block">
+                        <div className="relative">
+                            <svg
+                                className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-pm-subtle"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                            <input
+                                type="text"
+                                placeholder="Search markets..."
+                                value={searchQuery}
+                                onChange={e => setSearchQuery(e.target.value)}
+                                className="w-full pl-8 pr-3 py-1.5 bg-pm-card border border-pm-border rounded-md text-sm text-pm-text placeholder-pm-subtle focus:outline-none focus:border-pm-blue transition-colors"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Right section */}
+                    <div className="flex items-center gap-2 ml-auto shrink-0">
+                        {/* Mobile search toggle */}
+                        <button
+                            className="md:hidden p-1.5 text-pm-muted hover:text-pm-text"
+                            onClick={() => setSearchOpen(!searchOpen)}
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </button>
+
                         {user ? (
                             <>
-                                <div className="text-right hidden sm:block">
-                                    <div className="text-sm text-gray-600">{user.username}</div>
-                                    <div className="text-lg font-semibold text-gray-900">
+                                <div className="hidden sm:flex items-center gap-2 bg-pm-card border border-pm-border rounded-md px-3 py-1.5">
+                                    <span className="font-tabular text-sm font-medium text-pm-yes">
                                         ${user.paperBalance.toFixed(2)}
-                                    </div>
+                                    </span>
+                                    <span className="text-pm-subtle text-xs">|</span>
+                                    <span className="text-pm-muted text-xs">{user.username}</span>
                                 </div>
                                 <button
                                     onClick={handleLogout}
-                                    className="px-4 py-2 text-gray-700 font-medium hover:bg-gray-100 rounded transition"
+                                    className="px-3 py-1.5 text-sm text-pm-muted hover:text-pm-text border border-pm-border rounded-md hover:border-pm-subtle transition-colors"
                                 >
                                     Logout
                                 </button>
@@ -87,21 +111,40 @@ export default function Header() {
                             <>
                                 <Link
                                     to="/login"
-                                    className="px-4 py-2 text-gray-700 font-medium hover:bg-gray-100 rounded transition"
+                                    className="px-3 py-1.5 text-sm text-pm-muted hover:text-pm-text transition-colors"
                                 >
-                                    Login
+                                    Sign in
                                 </Link>
                                 <Link
                                     to="/register"
-                                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded transition"
+                                    className="px-3 py-1.5 text-sm font-medium bg-pm-blue hover:bg-blue-600 text-white rounded-md transition-colors"
                                 >
-                                    Sign Up
+                                    Sign up
                                 </Link>
                             </>
                         )}
                     </div>
                 </div>
-            </div>
-        </header>
+
+                {/* Mobile search bar */}
+                {searchOpen && (
+                    <div className="md:hidden px-4 pb-3 border-t border-pm-border pt-3">
+                        <div className="relative">
+                            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-pm-subtle" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                            <input
+                                type="text"
+                                placeholder="Search markets..."
+                                value={searchQuery}
+                                onChange={e => setSearchQuery(e.target.value)}
+                                autoFocus
+                                className="w-full pl-8 pr-3 py-2 bg-pm-card border border-pm-border rounded-md text-sm text-pm-text placeholder-pm-subtle focus:outline-none focus:border-pm-blue"
+                            />
+                        </div>
+                    </div>
+                )}
+            </header>
+        </>
     )
 }

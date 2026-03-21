@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { apiClient, Position, Trade } from '../lib/api'
 import { usePositions, useTrades } from '../lib/store'
 
@@ -17,7 +18,7 @@ export default function PortfolioPage() {
                 ])
                 setPosState(posData)
                 setTradesState(tradeData.trades)
-            } catch (err) {
+            } catch {
                 setError('Failed to load portfolio')
             }
         }
@@ -35,131 +36,126 @@ export default function PortfolioPage() {
     }, 0)
 
     return (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <h1 className="text-4xl font-bold text-white mb-8">Portfolio</h1>
+        <div className="min-h-screen bg-pm-bg">
+            <div className="max-w-screen-xl mx-auto px-4 py-6">
+                <h1 className="text-xl font-bold text-pm-text mb-6">Portfolio</h1>
 
-            {error && (
-                <div className="bg-red-900 border border-red-700 text-red-100 px-4 py-3 rounded-lg mb-6">
-                    {error}
-                </div>
-            )}
-
-            {/* Portfolio Summary */}
-            <div className="bg-slate-800 border border-slate-700 rounded-lg p-6 mb-8">
-                <div className="grid md:grid-cols-3 gap-4">
-                    <div>
-                        <p className="text-slate-400 text-sm mb-1">Open Positions Value</p>
-                        <p className="text-3xl font-bold text-white">${totalPositionValue.toFixed(2)}</p>
+                {error && (
+                    <div className="bg-red-950 border border-pm-no/30 text-pm-no px-3 py-2.5 rounded-lg mb-4 text-xs mb-6">
+                        {error}
                     </div>
-                    <div>
-                        <p className="text-slate-400 text-sm mb-1">Total Positions</p>
-                        <p className="text-3xl font-bold text-white">{positions.length}</p>
-                    </div>
-                    <div>
-                        <p className="text-slate-400 text-sm mb-1">Total Trades</p>
-                        <p className="text-3xl font-bold text-white">{trades.length}</p>
-                    </div>
-                </div>
-            </div>
+                )}
 
-            {/* Tabs */}
-            <div className="flex gap-4 mb-6 border-b border-slate-700">
-                <button
-                    onClick={() => setActiveTab('positions')}
-                    className={`px-4 py-2 font-semibold transition ${activeTab === 'positions'
-                        ? 'text-white border-b-2 border-blue-500'
-                        : 'text-slate-400 hover:text-white'
-                        }`}
-                >
-                    Positions
-                </button>
-                <button
-                    onClick={() => setActiveTab('trades')}
-                    className={`px-4 py-2 font-semibold transition ${activeTab === 'trades'
-                        ? 'text-white border-b-2 border-blue-500'
-                        : 'text-slate-400 hover:text-white'
-                        }`}
-                >
-                    Trade History
-                </button>
-            </div>
-
-            {/* Positions Tab */}
-            {activeTab === 'positions' && (
-                <div>
-                    {posLoading ? (
-                        <p className="text-slate-400">Loading positions...</p>
-                    ) : positions.length === 0 ? (
-                        <p className="text-slate-400">No open positions</p>
-                    ) : (
-                        <div className="grid gap-4">
-                            {positions.map((pos: Position) => (
-                                <div
-                                    key={pos.id}
-                                    className="bg-slate-800 border border-slate-700 rounded-lg p-4"
-                                >
-                                    <div className="flex justify-between items-start mb-3">
-                                        <div>
-                                            <h3 className="text-lg font-semibold text-white">
-                                                {pos.market?.title || 'Unknown Market'}
-                                            </h3>
-                                            <p className="text-sm text-slate-400">
-                                                {pos.side} - {pos.shares.toFixed(2)} shares
-                                            </p>
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="text-xl font-bold text-white">
-                                                ${(pos.side === 'YES'
-                                                    ? pos.shares * (pos.market?.yesProb ?? 50) / 100
-                                                    : pos.shares * (100 - (pos.market?.yesProb ?? 50)) / 100
-                                                ).toFixed(2)}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div className="text-sm text-slate-400">
-                                        Avg Price: ${pos.avgPrice.toFixed(2)} | Cost: ${pos.costBasis.toFixed(2)}
-                                    </div>
-                                </div>
-                            ))}
+                {/* Stats row */}
+                <div className="grid grid-cols-3 gap-3 mb-6">
+                    {[
+                        { label: 'Position Value', value: `$${totalPositionValue.toFixed(2)}` },
+                        { label: 'Open Positions', value: positions.length.toString() },
+                        { label: 'Total Trades', value: trades.length.toString() },
+                    ].map(({ label, value }) => (
+                        <div key={label} className="bg-pm-card border border-pm-border rounded-xl p-4">
+                            <p className="text-pm-muted text-xs mb-1">{label}</p>
+                            <p className="font-tabular text-xl font-bold text-pm-text">{value}</p>
                         </div>
-                    )}
+                    ))}
                 </div>
-            )}
 
-            {/* Trades Tab */}
-            {activeTab === 'trades' && (
-                <div>
-                    {tradesLoading ? (
-                        <p className="text-slate-400">Loading trades...</p>
-                    ) : trades.length === 0 ? (
-                        <p className="text-slate-400">No trades yet</p>
+                {/* Tabs */}
+                <div className="flex gap-1 mb-5 border-b border-pm-border">
+                    {(['positions', 'trades'] as const).map(tab => (
+                        <button
+                            key={tab}
+                            onClick={() => setActiveTab(tab)}
+                            className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors capitalize ${
+                                activeTab === tab
+                                    ? 'border-pm-blue text-pm-text'
+                                    : 'border-transparent text-pm-muted hover:text-pm-text'
+                            }`}
+                        >
+                            {tab === 'positions' ? 'Positions' : 'Trade History'}
+                        </button>
+                    ))}
+                </div>
+
+                {/* Positions */}
+                {activeTab === 'positions' && (
+                    posLoading ? (
+                        <div className="text-center py-16">
+                            <div className="inline-block w-5 h-5 border-2 border-pm-border border-t-pm-blue rounded-full animate-spin" />
+                        </div>
+                    ) : positions.length === 0 ? (
+                        <div className="text-center py-16 text-pm-muted text-sm">
+                            <p className="mb-3">No open positions</p>
+                            <Link to="/markets" className="text-pm-blue hover:underline text-xs">Browse markets</Link>
+                        </div>
                     ) : (
-                        <div className="grid gap-2">
+                        <div className="flex flex-col gap-2">
+                            {positions.map((pos: Position) => {
+                                const currentValue = pos.side === 'YES'
+                                    ? pos.shares * (pos.market?.yesProb ?? 50) / 100
+                                    : pos.shares * (100 - (pos.market?.yesProb ?? 50)) / 100
+                                const pnl = currentValue - pos.costBasis
+                                return (
+                                    <div key={pos.id} className="bg-pm-card border border-pm-border rounded-xl p-4 flex items-center gap-4">
+                                        {/* Side indicator */}
+                                        <div className={`w-1 self-stretch rounded-full ${pos.side === 'YES' ? 'bg-pm-yes' : 'bg-pm-no'}`} />
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-medium text-pm-text line-clamp-1">
+                                                {pos.market?.title || 'Unknown Market'}
+                                            </p>
+                                            <p className="font-tabular text-xs text-pm-muted mt-1">
+                                                <span className={pos.side === 'YES' ? 'text-pm-yes' : 'text-pm-no'}>{pos.side}</span>
+                                                {' · '}{pos.shares.toFixed(2)} shares
+                                                {' · '}avg {pos.avgPrice.toFixed(2)}¢
+                                            </p>
+                                        </div>
+                                        <div className="text-right shrink-0">
+                                            <p className="font-tabular text-sm font-semibold text-pm-text">${currentValue.toFixed(2)}</p>
+                                            <p className={`font-tabular text-xs mt-0.5 ${pnl >= 0 ? 'text-pm-yes' : 'text-pm-no'}`}>
+                                                {pnl >= 0 ? '+' : ''}{pnl.toFixed(2)}
+                                            </p>
+                                        </div>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    )
+                )}
+
+                {/* Trades */}
+                {activeTab === 'trades' && (
+                    tradesLoading ? (
+                        <div className="text-center py-16">
+                            <div className="inline-block w-5 h-5 border-2 border-pm-border border-t-pm-blue rounded-full animate-spin" />
+                        </div>
+                    ) : trades.length === 0 ? (
+                        <div className="text-center py-16 text-pm-muted text-sm">No trades yet</div>
+                    ) : (
+                        <div className="flex flex-col gap-2">
                             {trades.map((trade: Trade) => (
-                                <div
-                                    key={trade.id}
-                                    className="bg-slate-800 border border-slate-700 rounded-lg p-4 flex justify-between items-center"
-                                >
-                                    <div>
-                                        <p className="text-white font-semibold">
+                                <div key={trade.id} className="bg-pm-card border border-pm-border rounded-xl px-4 py-3 flex items-center gap-4">
+                                    <div className={`w-1 self-stretch rounded-full ${trade.side === 'YES' ? 'bg-pm-yes' : 'bg-pm-no'}`} />
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-medium text-pm-text line-clamp-1">
                                             {trade.market?.title || 'Unknown Market'}
                                         </p>
-                                        <p className="text-sm text-slate-400">
-                                            {trade.type} {trade.side} - {trade.shares.toFixed(2)} @ ${trade.price.toFixed(2)}
+                                        <p className="font-tabular text-xs text-pm-muted mt-0.5">
+                                            <span className={trade.side === 'YES' ? 'text-pm-yes' : 'text-pm-no'}>{trade.side}</span>
+                                            {' · '}{trade.shares.toFixed(2)} shares @ {trade.price.toFixed(2)}¢
                                         </p>
                                     </div>
-                                    <div className="text-right">
-                                        <p className="text-white font-semibold">${trade.amount.toFixed(2)}</p>
-                                        <p className="text-xs text-slate-400">
-                                            {new Date(trade.createdAt).toLocaleString()}
+                                    <div className="text-right shrink-0">
+                                        <p className="font-tabular text-sm font-semibold text-pm-text">${trade.amount.toFixed(2)}</p>
+                                        <p className="font-tabular text-xs text-pm-subtle mt-0.5">
+                                            {new Date(trade.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                                         </p>
                                     </div>
                                 </div>
                             ))}
                         </div>
-                    )}
-                </div>
-            )}
+                    )
+                )}
+            </div>
         </div>
     )
 }
