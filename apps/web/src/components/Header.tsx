@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { Link, useNavigate, useLocation, NavLink } from 'react-router-dom'
 import { useAuth } from '../lib/store'
 import { apiClient } from '../lib/api'
 import Logo from './Logo'
@@ -110,13 +110,16 @@ export default function Header() {
 
                         {user ? (
                             <>
-                                <div className="hidden sm:flex items-center gap-2 bg-pm-card border border-pm-border rounded-md px-3 py-1.5">
+                                <NavLink
+                                    to="/account"
+                                    className="hidden sm:flex items-center gap-2 bg-pm-card border border-pm-border rounded-md px-3 py-1.5 hover:border-pm-subtle transition-colors"
+                                >
                                     <span className="font-tabular text-sm font-medium text-pm-yes">
                                         ${Number(user.paperBalance).toFixed(2)}
                                     </span>
                                     <span className="text-pm-subtle text-xs">|</span>
                                     <span className="text-pm-muted text-xs">{user.username}</span>
-                                </div>
+                                </NavLink>
                                 <button
                                     onClick={handleLogout}
                                     className="px-3 py-1.5 text-sm text-pm-muted hover:text-pm-text border border-pm-border rounded-md hover:border-pm-subtle transition-colors"

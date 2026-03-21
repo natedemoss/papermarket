@@ -179,6 +179,10 @@ class ApiClient {
         return response.data as User
     }
 
+    async updatePassword(currentPassword: string, newPassword: string) {
+        await this.axiosInstance.patch('/users/me/password', { currentPassword, newPassword })
+    }
+
     // Market endpoints
     async getMarkets(category?: string, sort?: 'volume' | 'newest' | 'closing_soon', resolved?: boolean) {
         const params = new URLSearchParams()

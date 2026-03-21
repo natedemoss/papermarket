@@ -11,6 +11,7 @@ import MarketDetailPage from './pages/MarketDetailPage'
 import PortfolioPage from './pages/PortfolioPage'
 import LeaderboardPage from './pages/LeaderboardPage'
 import AdminUsersPage from './pages/AdminUsersPage'
+import AccountPage from './pages/AccountPage'
 import OAuthCallbackPage from './pages/OAuthCallbackPage'
 import InfoPage from './pages/InfoPage'
 import Header from './components/Header'
@@ -64,6 +65,14 @@ export default function App() {
                             }
                         />
                         <Route path="/info" element={<InfoPage />} />
+                        <Route
+                            path="/account"
+                            element={
+                                <ProtectedRoute>
+                                    <AccountPage />
+                                </ProtectedRoute>
+                            }
+                        />
                         <Route path="*" element={<Navigate to="/" replace />} />
                     </Routes>
                 </main>
