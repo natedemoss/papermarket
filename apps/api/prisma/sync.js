@@ -51,10 +51,12 @@ async function fetchAndSync() {
             // Parse volume
             const volume = parseFloat(m.volume || m.volumeNum || '0') || 0
 
-            // Skip low-volume or far-future markets
+            // Skip past-close or far-future markets
             const closeDate = new Date(m.endDate)
+            const now = new Date()
             const twoYearsOut = new Date()
             twoYearsOut.setFullYear(twoYearsOut.getFullYear() + 2)
+            if (closeDate < now) { skipped++; continue }
             if (closeDate > twoYearsOut) { skipped++; continue }
 
             // Map category from tags

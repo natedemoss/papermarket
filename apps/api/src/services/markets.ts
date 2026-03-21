@@ -9,8 +9,15 @@ export class MarketService {
 
     async getAll(params?: { category?: string; sort?: 'volume' | 'newest' | 'closing_soon' }) {
         const { category, sort } = params || {}
+        const now = new Date()
 
-        const where: any = { resolvedAt: null }
+        const where: any = {
+            resolvedAt: null,
+            OR: [
+                { closesAt: null },
+                { closesAt: { gt: now } },
+            ],
+        }
         if (category) {
             where.category = category
         }
@@ -21,6 +28,8 @@ export class MarketService {
         } else if (sort === 'newest') {
             orderBy.push({ createdAt: 'desc' })
         } else if (sort === 'closing_soon') {
+            // Only markets with a future close date, nearest first
+            where.closesAt = { gt: now }
             orderBy.push({ closesAt: 'asc' })
         } else {
             orderBy.push({ volume: 'desc' })

@@ -97,6 +97,7 @@ export class PolymarketSyncService {
                 if (yesProb === null) continue
 
                 const closeDate = new Date(m.endDate)
+                if (closeDate < new Date()) continue  // skip already-closed markets
                 if (closeDate > twoYearsOut) continue
 
                 const volume = m.volumeNum ?? (parseFloat(m.volume || '0') || 0)
