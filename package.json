@@ -1,0 +1,26 @@
+{
+  "name": "papermarket-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "PaperMarket - Full-stack prediction market app",
+  "workspaces": [
+    "apps/web",
+    "apps/api"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace=apps/web\" \"npm run dev --workspace=apps/api\"",
+    "build": "npm run build --workspace=apps/web && npm run build --workspace=apps/api",
+    "db:migrate": "npm run migrate --workspace=apps/api",
+    "db:push": "npm run push --workspace=apps/api",
+    "db:seed": "npm run seed --workspace=apps/api",
+    "db:studio": "npm run studio --workspace=apps/api"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "typescript": "^5.4.5"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  }
+}

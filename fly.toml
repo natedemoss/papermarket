@@ -1,0 +1,46 @@
+# Fly.io configuration for PaperMarket
+app = "papermarket"
+primary_region = "ord"
+
+[env]
+  NODE_ENV = "production"
+
+[build]
+  dockerfile = "Dockerfile.prod"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 1
+
+[env.production]
+  # Set via `fly secrets set`
+
+[[services]]
+  internal_port = 8080
+  processes = ["api"]
+
+  [[services.ports]]
+    handlers = ["http"]
+    port = 80
+
+  [[services.ports]]
+    handlers = ["tls", "http"]
+    port = 443
+
+[[services]]
+  internal_port = 3000
+  processes = ["web"]
+
+[postgres]
+  enabled = true
+
+[processes]
+  api = "cd apps/api && npm run start"
+  web = "cd apps/web && npm run preview"
+
+[mounts]
+  source = "data"
+  destination = "/data"

@@ -1,0 +1,64 @@
+# Multi-stage build for production deployment
+# This Dockerfile is used by Fly.io to build and run the entire app stack
+
+# Build backend
+FROM node:20-alpine AS api-builder
+
+WORKDIR /build
+
+COPY package.json package-lock.json ./
+COPY apps/api/package.json ./apps/api/
+RUN npm install --legacy-peer-deps
+
+COPY apps/api ./apps/api/
+COPY tsconfig.json ./
+WORKDIR /build/apps/api
+RUN npm run build && npx prisma generate
+
+# Build frontend
+FROM node:20-alpine AS web-builder
+
+WORKDIR /build
+
+COPY package.json package-lock.json ./
+COPY apps/web/package.json ./apps/web/
+RUN npm install --legacy-peer-deps
+
+COPY apps/web ./apps/web/
+COPY tsconfig.json ./
+WORKDIR /build/apps/web
+RUN npm run build
+
+# Production runtime
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Copy package files
+COPY package.json package-lock.json ./
+COPY apps/api/package.json ./apps/api/
+COPY apps/web/package.json ./apps/web/
+
+# Install production dependencies
+RUN npm install --legacy-peer-deps --production
+
+# Copy built backend
+COPY --from=api-builder /build/apps/api/dist ./apps/api/dist
+COPY --from=api-builder /build/apps/api/node_modules/@prisma ./apps/api/node_modules/@prisma
+COPY --from=api-builder /build/apps/api/prisma ./apps/api/prisma
+
+# Copy built frontend
+COPY --from=web-builder /build/apps/web/dist ./apps/web/dist
+
+# Install serve for frontend
+RUN npm install -g serve
+
+# Expose ports
+EXPOSE 3000 8080
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD node -e "require('http').get('http://localhost:8080/health', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"
+
+# Start both services
+CMD ["sh", "-c", "cd apps/api && node dist/index.js & serve -s apps/web/dist -l 3000"]

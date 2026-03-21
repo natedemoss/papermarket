@@ -1,0 +1,38 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "dockerfile",
+    "context": "."
+  },
+  "deploy": {
+    "numReplicas": 2,
+    "startCommand": "npm run start",
+    "restartPolicyType": "always",
+    "restartPolicyMaxRetries": 10
+  },
+  "plugins": [
+    "postgres"
+  ],
+  "variables": {
+    "NODE_ENV": {
+      "description": "Node environment",
+      "value": "production"
+    },
+    "FRONTEND_URL": {
+      "description": "Frontend URL",
+      "value": "${{ RAILWAY_PUBLIC_DOMAIN }}"
+    },
+    "JWT_SECRET": {
+      "description": "JWT secret key (auto-generated)",
+      "value": "${{ generate.secret }}"
+    },
+    "JWT_REFRESH_SECRET": {
+      "description": "JWT refresh secret (auto-generated)",
+      "value": "${{ generate.secret }}"
+    },
+    "POLYMARKET_SYNC_ENABLED": {
+      "description": "Enable Polymarket sync",
+      "value": "true"
+    }
+  }
+}

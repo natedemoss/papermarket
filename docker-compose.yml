@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: papermarket-db
+    environment:
+      POSTGRES_USER: ${DB_USER:-papermarket}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-papermarket}
+      POSTGRES_DB: ${DB_NAME:-papermarket_dev}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-papermarket}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: papermarket-api
+    environment:
+      NODE_ENV: development
+      PORT: 8080
+      DATABASE_URL: postgresql://${DB_USER:-papermarket}:${DB_PASSWORD:-papermarket}@postgres:5432/${DB_NAME:-papermarket_dev}
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-key-change-in-production}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-dev-refresh-key-change-in-production}
+      FRONTEND_URL: http://localhost:3000
+      POLYMARKET_SYNC_ENABLED: "true"
+      POLYMARKET_SYNC_LIMIT: "50"
+      ADMIN_EMAIL: admin@papermarket.com
+      ADMIN_PASSWORD: admin123
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./apps/api/prisma:/app/apps/api/prisma
+    command: node dist/index.js
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        - VITE_API_URL=http://localhost:8080/api
+    container_name: papermarket-web
+    environment:
+      VITE_API_URL: http://localhost:8080/api
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  default:
+    name: papermarket
