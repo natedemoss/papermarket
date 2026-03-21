@@ -13,7 +13,7 @@ RUN npm install --legacy-peer-deps
 COPY apps/api ./apps/api/
 COPY tsconfig.json ./
 WORKDIR /build/apps/api
-RUN npm run build && npx prisma generate
+RUN npx prisma generate && npm run build
 
 # Build frontend
 FROM node:20-alpine AS web-builder
