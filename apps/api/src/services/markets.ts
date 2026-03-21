@@ -11,13 +11,16 @@ export class MarketService {
         const { category, sort, resolved } = params || {}
         const now = new Date()
 
+        const oneYearOut = new Date()
+        oneYearOut.setFullYear(oneYearOut.getFullYear() + 1)
+
         const where: any = resolved
             ? { resolvedAt: { not: null } }
             : {
                 resolvedAt: null,
                 OR: [
                     { closesAt: null },
-                    { closesAt: { gt: now } },
+                    { closesAt: { gt: now, lt: oneYearOut } },
                 ],
             }
 
