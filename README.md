@@ -13,6 +13,15 @@
 
 [**Live Demo →**](https://papermarket-web.vercel.app)
 
+<br />
+
+<img src="https://image.thum.io/get/width/1300/crop/800/https://papermarket-web.vercel.app" alt="PaperMarket Homepage" width="100%" style="border-radius:12px" />
+
+<br /><br />
+
+<img src="https://image.thum.io/get/width/1300/crop/800/https://papermarket-web.vercel.app/leaderboard" alt="Leaderboard" width="48%" />
+<img src="https://image.thum.io/get/width/1300/crop/800/https://papermarket-web.vercel.app/markets" alt="Markets" width="48%" />
+
 </div>
 
 ---
