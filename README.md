@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://papermarket-web.vercel.app/logo.png" alt="PaperMarket" width="72" />
+<img src="https://papermarket-web.vercel.app/favicon.svg" alt="PaperMarket" width="72" />
 
 <h1>PaperMarket</h1>
 
