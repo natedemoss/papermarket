@@ -6,30 +6,26 @@ const { v4: uuidv4 } = require('uuid')
 
 const prisma = new PrismaClient()
 
-const firstNames = [
-    'alex','jordan','morgan','taylor','casey','riley','skyler','quinn','avery','drew',
-    'blake','reese','cameron','peyton','logan','hayden','parker','sawyer','rowan','finley',
-    'james','emma','oliver','sophia','liam','ava','noah','isabella','william','mia',
-    'ethan','charlotte','mason','amelia','lucas','harper','aiden','evelyn','jackson','abigail',
-    'sebastian','emily','mateo','elizabeth','jack','mila','owen','ella','theo','scarlett',
-    'henry','aria','leo','luna','daniel','chloe','michael','penelope','samuel','layla',
-    'david','riley','joseph','zoey','carter','nora','wyatt','lily','john','eleanor',
-    'luke','hannah','julian','lillian','gabriel','addison','andrew','aubrey','caleb','ellie',
-    'isaac','stella','eli','natalia','connor','zoe','evan','leah','aaron','hazel',
-    'charles','violet','thomas','aurora','christopher','savannah','jaxon','audrey','colton','brooklyn',
-    'jayden','bella','axel','claire','levi','skylar','miles','lucy','ryan','paisley',
-    'nolan','everly','hudson','anna','hunter','caroline','bentley','genesis','easton','kennedy',
+// Just first names — feel like real people
+const justNames = [
+    'alex','jordan','morgan','taylor','casey','riley','quinn','avery','drew','blake',
+    'reese','logan','parker','sawyer','rowan','james','oliver','liam','noah','ethan',
+    'mason','lucas','jack','owen','theo','henry','leo','daniel','ryan','nolan',
+    'miles','evan','caleb','eli','aaron','isaac','cole','felix','sean','jake',
+    'emma','sophia','ava','mia','ella','aria','luna','chloe','layla','zoey',
+    'nora','lily','stella','zoe','leah','hazel','violet','aurora','claire','anna',
+    'maya','nova','ivy','jade','ruby','skye','nina','sara','kate','june',
 ]
 
-const lastNames = [
-    'smith','johnson','williams','jones','brown','davis','miller','wilson','moore','taylor',
-    'anderson','thomas','jackson','white','harris','martin','thompson','garcia','martinez','robinson',
-    'clark','rodriguez','lewis','lee','walker','hall','allen','young','hernandez','king',
-    'wright','lopez','hill','scott','green','adams','baker','gonzalez','nelson','carter',
-    'mitchell','perez','roberts','turner','phillips','campbell','parker','evans','edwards','collins',
-    'stewart','sanchez','morris','rogers','reed','cook','morgan','bell','murphy','bailey',
-    'rivera','cooper','richardson','cox','howard','ward','torres','peterson','gray','ramirez',
-    'james','watson','brooks','kelly','sanders','price','bennett','wood','barnes','ross',
+// Short cool words — vibes like rain, nexta, occisor
+const coolWords = [
+    'rain','nexta','occisor','velt','kael','dusk','flux','echo','drift','frost',
+    'vale','crest','zion','onyx','sol','riven','axon','lyric','seren','cobalt',
+    'maren','cypher','wren','arlo','juno','orion','atlas','nova','zenith','arc',
+    'cole','lux','vex','rho','sable','haven','kira','thorn','ember','dax',
+    'sloane','brix','quill','flint','trace','vance','nox','hex','ash','greer',
+    'lore','bryn','cael','reed','pax','rue','fenn','bay','crew','vale',
+    'wick','dune','sora','zane','blythe','cove','elio','shaw','rome','wolf',
 ]
 
 function randItem(arr) {
@@ -70,14 +66,26 @@ async function main() {
     const usedUsernames = new Set()
 
     for (let i = 0; i < 300; i++) {
-        // Generate unique username
+        // Generate unique username — mix of styles so they look organic
         let username
         let attempts = 0
         do {
-            const first = randItem(firstNames)
-            const last = randItem(lastNames)
-            const num = randInt(1, 999)
-            username = `${first}${last}${num > 900 ? '' : num > 500 ? num : ''}`
+            const style = randInt(0, 3)
+            if (style === 0) {
+                // Just a first name, maybe with a short number: alex, maya23
+                const name = randItem(justNames)
+                username = Math.random() > 0.5 ? name : `${name}${randInt(1, 99)}`
+            } else if (style === 1) {
+                // Cool word, maybe with number: rain, frost7
+                const word = randItem(coolWords)
+                username = Math.random() > 0.6 ? word : `${word}${randInt(1, 99)}`
+            } else if (style === 2) {
+                // Two cool words or name+word: ashwolf, junefrost
+                username = `${randItem(coolWords)}${randItem(coolWords)}`
+            } else {
+                // Name + cool word: alexdusk, novarain
+                username = `${randItem(justNames)}${randItem(coolWords)}`
+            }
             attempts++
         } while (usedUsernames.has(username) && attempts < 20)
         usedUsernames.add(username)
