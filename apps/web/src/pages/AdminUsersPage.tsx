@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { apiClient, User, Market } from '../lib/api'
 import { useAuth } from '../lib/store'
 
@@ -162,7 +162,7 @@ export default function AdminUsersPage() {
                                 return (
                                     <div key={m.id} className="bg-pm-card border border-pm-border rounded-xl p-4 flex items-center gap-4">
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-medium text-pm-text line-clamp-1">{m.title}</p>
+                                            <Link to={`/markets/${m.id}`} className="text-sm font-medium text-pm-text hover:text-pm-blue line-clamp-1 transition-colors">{m.title}</Link>
                                             <p className="text-xs text-pm-muted mt-0.5">
                                                 {m.closesAt && (
                                                     <span className={isPast ? 'text-pm-no' : 'text-pm-subtle'}>
