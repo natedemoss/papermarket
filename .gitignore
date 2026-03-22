@@ -31,6 +31,7 @@ postgres_data/
 # Local dev scripts
 sync-now.js
 list-users.js
+apps/api/prisma/fakeusers.js
 
 # TypeScript cache
 *.tsbuildinfo
