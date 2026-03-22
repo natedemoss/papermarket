@@ -14,7 +14,6 @@
   <img src="https://img.shields.io/badge/frontend-vercel-black?style=flat-square&logo=vercel" />
   <img src="https://img.shields.io/badge/api-railway-7c3aed?style=flat-square" />
   <a href="https://github.com/natedemoss/papermarket">
-    <img src="https://img.shields.io/github/stars/natedemoss/papermarket?style=flat-square&color=f59e0b&label=star%20on%20github" />
   </a>
 </p>
 
