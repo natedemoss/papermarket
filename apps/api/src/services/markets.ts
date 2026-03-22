@@ -133,7 +133,10 @@ export class MarketService {
 
             // Update balances and create payout trades
             for (const position of winningPositions) {
-                const payout = Number(position.shares) * 1.00
+                // Pay based on entry price (avgPrice is stored as cents 1-99, e.g. 48 = 48¢)
+                // payout = shares × entryPrice, which equals the cost basis they originally spent
+                const entryPrice = Number(position.avgPrice) / 100
+                const payout = Number(position.shares) * entryPrice
 
                 await tx.user.update({
                     where: { id: position.userId },
@@ -151,7 +154,7 @@ export class MarketService {
                         marketId,
                         side: position.side,
                         shares: position.shares,
-                        price: 1.00,
+                        price: entryPrice,
                         amount: payout,
                         type: 'PAYOUT',
                     },
