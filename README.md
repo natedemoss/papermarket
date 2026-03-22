@@ -1,5 +1,7 @@
 # PaperMarket
 
+[![Traders](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fpapermarket-production.up.railway.app%2Fapi%2Fstats&query=%24.userCount&label=traders&color=4ade80&style=flat-square)](https://papermarket-web.vercel.app)
+
 A paper-trading prediction market platform powered by live data from [Polymarket](https://polymarket.com). Trade on real-world outcomes with $1,000 in play money — no financial risk.
 
 ## Stack
