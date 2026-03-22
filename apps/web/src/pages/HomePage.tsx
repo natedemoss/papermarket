@@ -184,6 +184,7 @@ function StatCounter({ value, label, prefix = '' }: { value: string; label: stri
 export default function HomePage() {
     const { user } = useAuth()
     const [markets, setMarkets] = useState<Market[]>([])
+    const [userCount, setUserCount] = useState<number | null>(null)
     const [activeCategory, setActiveCategory] = useState('All')
     const [viewMode, setViewMode] = useState<ViewMode>('trending')
     const carouselRef = useRef<HTMLDivElement>(null)
@@ -193,6 +194,10 @@ export default function HomePage() {
     useEffect(() => {
         apiClient.getMarkets(undefined, activeView.sort).then(setMarkets).catch(() => {})
     }, [viewMode])
+
+    useEffect(() => {
+        apiClient.getStats().then(s => setUserCount(s.userCount)).catch(() => {})
+    }, [])
 
     const filteredMarkets = activeCategory === 'All'
         ? markets
@@ -248,6 +253,11 @@ export default function HomePage() {
                             <p className="text-pm-muted text-sm max-w-md leading-relaxed">
                                 Predict real-world outcomes with play money. No risk, pure strategy. Compete with traders on global events.
                             </p>
+                            {userCount !== null && (
+                                <p className="text-pm-subtle text-xs mt-3">
+                                    Join <span className="text-pm-text font-semibold">{userCount.toLocaleString()}</span> traders already on the platform
+                                </p>
+                            )}
                         </div>
                         <div className="flex flex-col items-end gap-4 shrink-0 animate-fade-up-slow">
                             {/* Mini stat strip */}
@@ -256,6 +266,10 @@ export default function HomePage() {
                                 <div className="w-px h-8 bg-pm-border" />
                                 <StatCounter value={`$${(totalVolume / 1000).toFixed(0)}K`} label="Total Volume" />
                                 <div className="w-px h-8 bg-pm-border" />
+                                {userCount !== null && <>
+                                    <StatCounter value={userCount.toLocaleString()} label="Traders" />
+                                    <div className="w-px h-8 bg-pm-border" />
+                                </>}
                                 <StatCounter value="$1,000" label="Free Play Money" />
                             </div>
                             <div className="flex items-center gap-3">
@@ -375,6 +389,7 @@ export default function HomePage() {
                                 {[
                                     { label: 'Active Markets', value: markets.length.toString() },
                                     { label: 'Total Volume', value: '$' + (totalVolume / 1000).toFixed(0) + 'K' },
+                                    ...(userCount !== null ? [{ label: 'Traders', value: userCount.toLocaleString() }] : []),
                                     { label: 'Play Balance', value: user ? `$${Number(user.paperBalance).toFixed(0)}` : '$1,000 free' },
                                 ].map(({ label, value }) => (
                                     <div key={label} className="flex items-center justify-between">

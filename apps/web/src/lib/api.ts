@@ -266,6 +266,11 @@ class ApiClient {
         await this.axiosInstance.delete(`/markets/${marketId}/comments/${commentId}`)
     }
 
+    async getStats() {
+        const response = await this.axiosInstance.get('/stats')
+        return response.data as { userCount: number }
+    }
+
     // Admin endpoints
     async syncPolymarket() {
         const response = await this.axiosInstance.post('/admin/sync')

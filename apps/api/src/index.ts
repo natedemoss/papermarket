@@ -56,6 +56,12 @@ app.get('/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() })
 })
 
+// Public stats endpoint
+app.get('/api/stats', async (req, res) => {
+    const userCount = await prisma.user.count()
+    res.json({ userCount })
+})
+
 // Mount route handlers
 app.use('/api/auth', authLimiter, registerAuthRoutes(prisma))
 app.use('/api/users', registerUserRoutes(prisma))
