@@ -3,7 +3,7 @@
 <img src="https://papermarket-web.vercel.app/favicon.svg" alt="PaperMarket" width="72" />
 
 <h1>PaperMarket</h1>
-
+<h1>CURRENTLY DOWN DUE TO BACKEND SERVER COSTS</h1>
 <p>Trade on real-world events with free play money. No risk, pure strategy.</p>
 
 <p>
