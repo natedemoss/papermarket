@@ -31,11 +31,11 @@
 ## Security
 
 - [ ] SSL/TLS certificates installed (or use Let's Encrypt)
-- [ ] Helmet security headers enabled (✅ in code)
+- [ ] Helmet security headers enabled ( in code)
 - [ ] CORS restricted to frontend domain
-- [ ] Rate limiting configured (✅ in code)
+- [ ] Rate limiting configured ( in code)
 - [ ] Admin account password changed
-- [ ] Input validation on all endpoints (✅ Zod)
+- [ ] Input validation on all endpoints ( Zod)
 - [ ] No sensitive data in logs
 - [ ] Database credentials not in code (using env vars)
 
@@ -152,4 +152,8 @@ FEATURE_CUSTOM_MARKETS=false
 
 **Deployment by:** ___________________
 **Date:** ___________________
-**Status:** ☐ Pending ☐ In Progress ☐ Complete ☐ Failed
+**Status:**
+- [ ] Pending
+- [ ] In Progress
+- [ ] Complete
+- [ ] Failed

@@ -1,6 +1,6 @@
 # PaperMarket — Quick Start Guide
 
-## 🎯 Start in 5 Minutes
+## Start in 5 Minutes
 
 ### Prerequisites
 - Docker & Docker Compose installed
@@ -15,9 +15,9 @@ docker compose up
 
 Wait for all services to be healthy:
 ```
-✅ postgres_1 - ready
-✅ api_1 - http://localhost:8080/health
-✅ web_1 - http://localhost:3000
+postgres_1 - ready
+api_1 - http://localhost:8080/health
+web_1 - http://localhost:3000
 ```
 
 ### 2. Open the App
@@ -48,7 +48,7 @@ Wait for all services to be healthy:
 
 ---
 
-## 🔧 Manual Setup (No Docker)
+## Manual Setup (No Docker)
 
 ```bash
 # 1. Install dependencies
@@ -72,7 +72,7 @@ npm run dev
 
 ---
 
-## 📱 Key URLs
+## Key URLs
 
 | Page | URL |
 |------|-----|
@@ -85,7 +85,7 @@ npm run dev
 
 ---
 
-## 👤 Test Accounts
+## Test Accounts
 
 After seeding, you have:
 
@@ -100,7 +100,7 @@ After seeding, you have:
 
 ---
 
-## 🔌 API Examples
+## API Examples
 
 ### Register
 ```bash
@@ -131,7 +131,7 @@ curl http://localhost:8080/api/users/leaderboard
 
 ---
 
-## 🚀 Deploy to Production
+## Deploy to Production
 
 ### Fly.io (Easiest)
 ```bash
@@ -155,7 +155,7 @@ docker compose -f docker-compose.prod.yml up -d
 
 ---
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 **Port 3000/8080 already in use?**
 ```bash
@@ -190,7 +190,7 @@ docker compose logs api
 
 ---
 
-## 📚 Full Documentation
+## Full Documentation
 
 See `README.md` for:
 - Complete API reference
@@ -206,7 +206,7 @@ See `IMPLEMENTATION_SUMMARY.md` for:
 
 ---
 
-## 💡 Tips
+## Tips
 
 1. **Use test accounts** — alice, bob, charlie already have balances
 2. **Markets auto-sync** — Polymarket data updates every 10 min
@@ -216,7 +216,7 @@ See `IMPLEMENTATION_SUMMARY.md` for:
 
 ---
 
-## 🎉 You're Ready!
+## You're Ready!
 
 ```bash
 docker compose up
@@ -225,4 +225,4 @@ docker compose up
 # Start trading!
 ```
 
-Happy trading! 🚀
+Happy trading!
