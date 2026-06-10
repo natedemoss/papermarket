@@ -1,0 +1,29 @@
+# Render blueprint for the PaperMarket API (free tier)
+# Database lives on Neon (free) — set DATABASE_URL in the Render dashboard.
+services:
+  - type: web
+    name: papermarket-api
+    runtime: node
+    plan: free
+    buildCommand: npm install --legacy-peer-deps && cd apps/api && npx prisma generate && npm run build
+    startCommand: cd apps/api && npx prisma db push --skip-generate && node dist/index.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false # paste the Neon connection string in the dashboard
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: FRONTEND_URL
+        value: https://papermarket-web.vercel.app
+      - key: POLYMARKET_SYNC_ENABLED
+        value: "true"
+      - key: POLYMARKET_SYNC_LIMIT
+        value: "50"
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false

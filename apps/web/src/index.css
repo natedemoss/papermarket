@@ -93,6 +93,54 @@
     .featured-glow:hover {
         box-shadow: 0 0 0 1px rgba(59, 116, 255, 0.3), 0 8px 32px rgba(59, 116, 255, 0.1);
     }
+
+    /* Hero grid backdrop, faded toward the edges */
+    .bg-hero-grid {
+        background-image:
+            linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+        background-size: 44px 44px;
+        -webkit-mask-image: radial-gradient(ellipse 85% 80% at 50% 0%, black 25%, transparent 78%);
+        mask-image: radial-gradient(ellipse 85% 80% at 50% 0%, black 25%, transparent 78%);
+    }
+
+    .text-gradient {
+        background: linear-gradient(100deg, #5B8CFF 0%, #3B74FF 45%, #00C278 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
+
+    /* Probability bar that sweeps in from the left */
+    .bar-grow {
+        transform-origin: left center;
+        animation: grow-x 1s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    /* Soft floating glow orbs */
+    .orb {
+        position: absolute;
+        border-radius: 9999px;
+        filter: blur(80px);
+        pointer-events: none;
+        animation: orb-float 14s ease-in-out infinite;
+    }
+    .orb-delay {
+        animation-delay: -7s;
+    }
+
+    /* Fade ticker edges into the background */
+    .ticker-mask {
+        -webkit-mask-image: linear-gradient(90deg, transparent, black 4%, black 96%, transparent);
+        mask-image: linear-gradient(90deg, transparent, black 4%, black 96%, transparent);
+    }
+
+    /* Hero price line draws itself in */
+    .draw-line {
+        stroke-dasharray: 2400;
+        stroke-dashoffset: 2400;
+        animation: draw-line 2.4s ease-out 0.3s forwards;
+    }
 }
 
 @keyframes ticker {
@@ -114,4 +162,18 @@
 @keyframes fade-up {
     from { opacity: 0; transform: translateY(12px); }
     to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes grow-x {
+    from { transform: scaleX(0); }
+    to   { transform: scaleX(1); }
+}
+
+@keyframes orb-float {
+    0%, 100% { transform: translate(0, 0); }
+    50%      { transform: translate(30px, -20px); }
+}
+
+@keyframes draw-line {
+    to { stroke-dashoffset: 0; }
 }
