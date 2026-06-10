@@ -152,4 +152,8 @@ FEATURE_CUSTOM_MARKETS=false
 
 **Deployment by:** ___________________
 **Date:** ___________________
-**Status:** Pending / In Progress / Complete / Failed
+**Status:**
+- [ ] Pending
+- [ ] In Progress
+- [ ] Complete
+- [ ] Failed

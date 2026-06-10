@@ -6,7 +6,7 @@
 ```
 .env.example               Environment variables template
 .gitignore                 Git ignore rules
-.prettierrc                 Code formatting config
+.prettierrc               Code formatting config
 docker-compose.yml         Local dev compose (3 services)
 docker-compose.prod.yml    Production compose (+ Nginx)
 Dockerfile.prod            Multi-stage build for Fly.io

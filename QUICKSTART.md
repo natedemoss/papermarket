@@ -15,9 +15,9 @@ docker compose up
 
 Wait for all services to be healthy:
 ```
- postgres_1 - ready
- api_1 - http://localhost:8080/health
- web_1 - http://localhost:3000
+postgres_1 - ready
+api_1 - http://localhost:8080/health
+web_1 - http://localhost:3000
 ```
 
 ### 2. Open the App
